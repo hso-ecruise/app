@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Auto-Simulation</string>
+
+    <string name="not_available">nicht verfügbar</string>
+    <string name="later_available">Laden...\ndanach verfügbar</string>
+    <string name="booked">gebucht</string>
+    <string name="available">verfügbar</string>
+    <string name="diconnected">nicht verbunden</string>
+</resources>
