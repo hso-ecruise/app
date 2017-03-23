@@ -22,7 +22,7 @@ public class ScanLED
     {
         switch (Server.getInstance().getCarState())
         {
-            case GEBUCHT:
+            case BOOKED_FULL:
                 if (Server.getInstance().checkID(scanDevice.scanUserId(), this.ID))
                 {
                     return ColorCode.GREEN;
@@ -31,7 +31,7 @@ public class ScanLED
                 {
                     return ColorCode.RED;
                 }
-            case LADEN_DANACH_GEBUCHT:
+            case BOOKED_CHARGING:
                 if (Server.getInstance().checkID(scanDevice.scanUserId(), this.ID))
                 {
                     return ColorCode.YELLOW;
@@ -40,11 +40,11 @@ public class ScanLED
                 {
                     return ColorCode.RED;
                 }
-            case LADEN_DANACH_VERFUGBAR:
+            case AVAILABLE_CHARGING:
                 return ColorCode.YELLOW;
-            case VERFUGBAR:
+            case AVAILABLE_FULL:
                 return ColorCode.GREEN;
-            case NICHT_VERFUGBAR:
+            case BLOCKED:
                 return ColorCode.RED;
         }
 

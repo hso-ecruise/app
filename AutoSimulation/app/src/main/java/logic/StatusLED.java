@@ -13,15 +13,15 @@ public class StatusLED
 
         switch (state)
         {
-            case GEBUCHT:
+            case BOOKED_FULL:
                 return ColorCode.BLUE;
-            case LADEN_DANACH_GEBUCHT:
+            case BOOKED_CHARGING:
                 return ColorCode.BLUE;
-            case LADEN_DANACH_VERFUGBAR:
+            case AVAILABLE_CHARGING:
                 return ColorCode.YELLOW;
-            case VERFUGBAR:
+            case AVAILABLE_FULL:
                 return ColorCode.GREEN;
-            case NICHT_VERFUGBAR:
+            case BLOCKED:
                 return ColorCode.RED;
         }
 
