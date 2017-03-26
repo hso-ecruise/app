@@ -36,7 +36,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:scaleType="matrix"
-                app:srcCompat="@mipmap/reserved2" />
+                app:srcCompat="@mipmap/reserved2"
+                tools:ignore="ContentDescription,InefficientWeight" />
         </LinearLayout>
 
         <Button
