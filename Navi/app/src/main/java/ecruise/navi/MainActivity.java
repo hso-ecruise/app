@@ -6,10 +6,15 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+
 public class MainActivity extends AppCompatActivity
 {
+    MapView mapView;
+    GoogleMap map;
 
-    @Override
+   @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
@@ -23,4 +28,5 @@ public class MainActivity extends AppCompatActivity
             }
         });*/
     }
+
 }
