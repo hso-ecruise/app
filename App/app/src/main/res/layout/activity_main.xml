@@ -19,11 +19,12 @@
             android:layout_weight="1">
 
             <Button
-                android:text="Daten"
+                android:id="@+id/dataButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/dataButton"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:elevation="0dp"
+                android:text="Daten" />
 
             <Space
                 android:layout_width="wrap_content"
