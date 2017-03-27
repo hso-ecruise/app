@@ -30,18 +30,18 @@
                 android:orientation="vertical" >
 
                 <TextView
-                    android:text="Vorname:"
+                    android:id="@+id/nameText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:id="@+id/textView1"
+                    android:text="Vorname:"
                     android:textAppearance="@android:style/TextAppearance.Material.Medium" />
 
                 <EditText
+                    android:id="@+id/nameText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPersonName"
                     android:ems="10"
-                    android:id="@+id/editText" />
+                    android:inputType="textPersonName" />
 
                 <TextView
                     android:text="Nachname:"
