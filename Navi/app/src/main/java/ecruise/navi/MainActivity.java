@@ -67,4 +67,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
         mMap.moveCamera(cu);
     }
+
+    public boolean createMarker(LatLng pos)
+    {
+        //TODO create marker here
+        return false;
+    }
+
+    public boolean setMarkerPosition(LatLng pos, Marker marker)
+    {
+        //TODO set marker position here
+
+        return false;
+    }
 }
