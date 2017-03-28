@@ -1,4 +1,4 @@
-package logic;
+package ecruise.logic;
 
 import java.util.ArrayList;
 import java.util.List;
