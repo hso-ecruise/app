@@ -1,4 +1,4 @@
-package logic;
+package ecruise.logic;
 
 /**
  * Created by Tom on 21.03.2017.
