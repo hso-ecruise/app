@@ -1,4 +1,7 @@
-package logic;
+package ecruise.logic;
+
+import ecruise.data.BookingState;
+import ecruise.data.ChargingState;
 
 /**
  * Created by Tom on 21.03.2017.

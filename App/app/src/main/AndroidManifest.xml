@@ -74,8 +74,11 @@
         </activity>
         <activity
             android:name=".MapsActivity"
-            android:label="@string/title_activity_maps"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:label="@string/title_activity_maps">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="me.ecruise.ecruise.MainActivity" />
+        </activity>
     </application>
 
 </manifest>

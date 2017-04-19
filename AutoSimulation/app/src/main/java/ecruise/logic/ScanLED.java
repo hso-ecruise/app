@@ -1,8 +1,8 @@
-package logic;
+package ecruise.logic;
 
-import data.IScanDevice;
-import data.NFCReader;
-import data.Server;
+import ecruise.data.IScanDevice;
+import ecruise.data.NFCReader;
+import ecruise.data.Server;
 
 /**
  * Created by Tom on 21.03.2017.
@@ -20,10 +20,10 @@ public class ScanLED
 
     public ColorCode calculateColorCode()
     {
-        switch (Server.getInstance().getCarState())
+        switch (new StatusLED().calculateCarState())
         {
             case BOOKED_FULL:
-                if (Server.getInstance().checkID(scanDevice.scanUserId(), this.ID))
+                if (Server.getConnection().checkID(scanDevice.scanUserId(), this.ID))
                 {
                     return ColorCode.GREEN;
                 }
@@ -32,7 +32,7 @@ public class ScanLED
                     return ColorCode.RED;
                 }
             case BOOKED_CHARGING:
-                if (Server.getInstance().checkID(scanDevice.scanUserId(), this.ID))
+                if (Server.getConnection().checkID(scanDevice.scanUserId(), this.ID))
                 {
                     return ColorCode.YELLOW;
                 }
