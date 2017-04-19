@@ -1,21 +1,20 @@
 package ecruise.autosimulation;
 
-import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import logic.ILogListener;
-import logic.Logger;
-import logic.*;
+import ecruise.data.Server;
+import ecruise.data.ServerConnection;
+import ecruise.logic.*;
 
-
-public class MainActivity extends Activity
+public class MainActivity extends AppCompatActivity
 {
     private ScanLED scanLED = new ScanLED();
     private StatusLED statusLED = new StatusLED();
@@ -40,6 +39,7 @@ public class MainActivity extends Activity
                 });
             }
         });
+        Server.setConnection(new ServerConnection());
     }
 
     @Override

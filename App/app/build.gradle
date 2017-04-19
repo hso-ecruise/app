@@ -4,7 +4,7 @@ android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
     defaultConfig {
-        applicationId "me.ecruise.ecruise"
+        applicationId "me.activitys.activitys"
         minSdkVersion 19
         targetSdkVersion 25
         versionCode 1
@@ -29,6 +29,7 @@ dependencies {
     compile 'com.android.support:design:25.1.1'
     compile 'com.google.android.gms:play-services:10.0.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'com.android.support:support-v4:25.3.1'
     compile 'com.google.android.gms:play-services-maps:10.2.1'
     testCompile 'junit:junit:4.12'
 }

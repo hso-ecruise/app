@@ -10,7 +10,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="me.ecruise.ecruise.BookingActivity"
+    tools:context="me.ecruise.activitys.BookingActivity"
     tools:showIn="@layout/activity_booking">
 
     <LinearLayout
@@ -19,18 +19,45 @@
         android:orientation="vertical"
         android:weightSum="1">
 
-        <TimePicker
-            android:id="@+id/timePicker"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:visibility="gone" />
+            android:orientation="horizontal">
 
-        <DatePicker
-            android:id="@+id/datePicker"
-            android:layout_width="wrap_content"
-            android:layout_height="213dp"
-            android:visibility="visible"
-            android:layout_weight="0.27" />
+            <TextView
+                android:id="@+id/fromView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Von"
+                android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
+
+            <EditText
+                android:id="@+id/dateText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10"
+                android:focusable="false"
+                android:hint="Datum"
+                android:inputType="date" />
+
+            <EditText
+                android:id="@+id/timeText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10"
+                android:focusable="false"
+                android:hint="Uhrzeit"
+                android:inputType="time" />
+
+        </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.30" />
 
         <CheckBox
             android:id="@+id/autoGpsBox"
@@ -42,8 +69,7 @@
             android:id="@+id/manualPositionButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Standort manuell bestimmen"
-            android:layout_weight="0.36" />
+            android:text="Standort manuell bestimmen" />
 
         <TextView
             android:id="@+id/textView5"
@@ -61,6 +87,7 @@
             android:id="@+id/bookButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:elevation="0dp"
             android:text="Jetzt Buchen" />
     </LinearLayout>
 </RelativeLayout>
