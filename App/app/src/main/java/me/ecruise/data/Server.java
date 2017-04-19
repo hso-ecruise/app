@@ -1,6 +1,4 @@
-package data;
-
-import data.CustomerData;
+package me.ecruise.data;
 
 public class Server
 {

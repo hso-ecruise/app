@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="me.ecruise.ecruise">
+    package="me.ecruise.activitys">
 
     <!-- To auto-complete the email text field in the login form with the user's emails -->
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
@@ -52,7 +52,7 @@
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="me.ecruise.ecruise.LoginActivity" />
+                android:value="me.ecruise.activitys.LoginActivity" />
         </activity>
         <activity
             android:name=".AccountManagementActivity"
@@ -61,7 +61,7 @@
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="me.ecruise.ecruise.MainActivity" />
+                android:value="me.ecruise.activitys.MainActivity" />
         </activity>
         <activity
             android:name=".BookingActivity"
@@ -70,15 +70,12 @@
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="me.ecruise.ecruise.MainActivity" />
+                android:value="me.ecruise.activitys.MainActivity" />
         </activity>
         <activity
-            android:name=".MapsActivity"
-            android:label="@string/title_activity_maps">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="me.ecruise.ecruise.MainActivity" />
-        </activity>
+            android:name=".Map2Activity"
+            android:label="Karte"></activity>
+
     </application>
 
 </manifest>
