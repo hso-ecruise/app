@@ -63,21 +63,37 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         LatLng ltlg = new LatLng(latit, longit);
-        CameraPosition cp = new CameraPosition.Builder().target(ltlg).zoom(4).build();
+        LatLng newLtLg = new LatLng(18, 28);
+        createMarker("New Marker", new LatLng(14, 24));
+
+        for(Marker marker : markers)
+        {
+           if(marker.getTitle().equals("New Marker"))
+               setMarkerPosition(newLtLg, marker);
+        }
+
+        /*CameraPosition cp = new CameraPosition.Builder().target(ltlg).zoom(4).build();
+        CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);*/
+        CameraPosition cp = new CameraPosition.Builder().target(newLtLg).zoom(4).build();
         CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
         mMap.moveCamera(cu);
     }
 
-    public boolean createMarker(LatLng pos)
+    public LatLng getCords()
     {
-        //TODO create marker here
+        return null;
+    }
+
+    public boolean createMarker(String markerName, LatLng ltlg)
+    {
+        MarkerOptions mOpts = new MarkerOptions().position(ltlg).title(markerName);
+        markers.add(mMap.addMarker(mOpts));
         return false;
     }
 
     public boolean setMarkerPosition(LatLng pos, Marker marker)
     {
-        //TODO set marker position here
-
+        marker.setPosition(pos);
         return false;
     }
 }

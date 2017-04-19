@@ -1,4 +1,4 @@
-package data;
+package me.ecruise.data;
 
 public class CustomerData {
 

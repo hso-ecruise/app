@@ -1,7 +1,6 @@
-package me.ecruise.ecruise;
+package me.ecruise.activitys;
 
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -10,8 +9,8 @@ import android.widget.EditText;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 
-import data.CustomerData;
-import data.Server;
+import me.ecruise.data.CustomerData;
+import me.ecruise.data.Server;
 
 public class AccountManagementActivity extends AppCompatActivity {
 

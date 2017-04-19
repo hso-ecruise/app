@@ -1,4 +1,4 @@
-package me.ecruise.ecruise;
+package me.ecruise.activitys;
 
 import org.junit.Test;
 
