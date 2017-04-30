@@ -269,7 +269,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             try {
                 // Simulate network access.
-                Thread.sleep(2000);
+                Thread.sleep(2);
             } catch (InterruptedException e) {
                 return false;
             }

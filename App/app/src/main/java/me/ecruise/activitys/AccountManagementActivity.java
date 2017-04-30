@@ -8,14 +8,23 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TabHost;
+import android.widget.TabHost.TabSpec;
+import android.widget.TabWidget;
+import android.widget.TextView;
 
 import me.ecruise.data.CustomerData;
 import me.ecruise.data.Server;
 
-public class AccountManagementActivity extends AppCompatActivity {
+public class AccountManagementActivity extends AppCompatActivity{
 
     CustomerData newCustomerData;
     CustomerData actualCustomerData;
+    LinearLayout login;
+    LinearLayout person;
+    LinearLayout address;
 
     public AccountManagementActivity(){
         actualCustomerData = Server.getInstance().getUserData();
@@ -35,13 +44,36 @@ public class AccountManagementActivity extends AppCompatActivity {
         initializeTextEdits(actualCustomerData);
 
 
-        Button mRegistrationButton = (Button) findViewById(R.id.confirmButton);
-        mRegistrationButton.setOnClickListener(new View.OnClickListener() {
+        Button mConfirmButton = (Button) findViewById(R.id.confirmButton);
+        mConfirmButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 confirm();
             }
         });
+
+        TabHost host = (TabHost)findViewById(R.id.tabHost);
+        host.setup();
+        login = (LinearLayout) findViewById(R.id.loginTab);
+        person = (LinearLayout) findViewById(R.id.personTab);
+        address = (LinearLayout) findViewById(R.id.addressTab);
+        host.clearAllTabs();
+        host.addTab(host.newTabSpec("Person").setIndicator("Person").setContent(new TabHost.TabContentFactory() {
+            public View createTabContent(String arg0) {
+                return person;
+            }
+        }));
+        host.addTab(host.newTabSpec("Login").setIndicator("Login").setContent(new TabHost.TabContentFactory() {
+            public View createTabContent(String arg0) {
+                return login;
+            }
+        }));
+        host.addTab(host.newTabSpec("Adresse").setIndicator("Adresse").setContent(new TabHost.TabContentFactory() {
+            public View createTabContent(String arg0) {
+                return address;
+            }
+        }));
+
     }
 
     private void confirm(){

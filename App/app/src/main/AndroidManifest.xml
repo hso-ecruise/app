@@ -74,8 +74,7 @@
         </activity>
         <activity
             android:name=".Map2Activity"
-            android:label="Karte"></activity>
-
+            android:label="Karte" />
     </application>
 
 </manifest>
