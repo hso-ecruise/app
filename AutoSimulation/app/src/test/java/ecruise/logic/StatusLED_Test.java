@@ -1,4 +1,4 @@
-package ecruise.autosimulation;
+package ecruise.logic;
 
 import ecruise.data.BookingState;
 import ecruise.data.ChargingState;
@@ -61,7 +61,7 @@ public class StatusLED_Test
         bookingState = BookingState.BOOKED;
         chargingState = ChargingState.CHARGING;
 
-        assertEquals(statusLED.calculateColorCode(), ColorCode.BLUE);
+        assertEquals(ColorCode.BLUE, statusLED.calculateColorCode());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class StatusLED_Test
         bookingState = BookingState.BOOKED;
         chargingState = ChargingState.FULL;
 
-        assertEquals(statusLED.calculateColorCode(), ColorCode.BLUE);
+        assertEquals(ColorCode.BLUE, statusLED.calculateColorCode());
     }
 
     @Test
@@ -79,7 +79,7 @@ public class StatusLED_Test
         bookingState = BookingState.BOOKED;
         chargingState = ChargingState.DISCHARGING;
 
-        assertEquals(statusLED.calculateColorCode(), ColorCode.OFF);
+        assertEquals(ColorCode.OFF, statusLED.calculateColorCode());
     }
 
 
@@ -89,7 +89,7 @@ public class StatusLED_Test
         bookingState = BookingState.AVAILABLE;
         chargingState = ChargingState.CHARGING;
 
-        assertEquals(statusLED.calculateColorCode(), ColorCode.YELLOW);
+        assertEquals(ColorCode.YELLOW, statusLED.calculateColorCode());
     }
 
     @Test
@@ -98,7 +98,7 @@ public class StatusLED_Test
         bookingState = BookingState.AVAILABLE;
         chargingState = ChargingState.FULL;
 
-        assertEquals(statusLED.calculateColorCode(), ColorCode.GREEN);
+        assertEquals(ColorCode.GREEN, statusLED.calculateColorCode());
     }
 
     @Test
@@ -107,7 +107,7 @@ public class StatusLED_Test
         bookingState = BookingState.AVAILABLE;
         chargingState = ChargingState.DISCHARGING;
 
-        assertEquals(statusLED.calculateColorCode(), ColorCode.OFF);
+        assertEquals(ColorCode.OFF, statusLED.calculateColorCode());
     }
 
 
@@ -117,24 +117,24 @@ public class StatusLED_Test
         bookingState = BookingState.BLOCKED;
         chargingState = ChargingState.CHARGING;
 
-        assertEquals(statusLED.calculateColorCode(), ColorCode.RED);
+        assertEquals(ColorCode.RED, statusLED.calculateColorCode());
     }
 
     @Test
     public void blocked_full_test() throws Exception
     {
-        bookingState = BookingState.AVAILABLE;
+        bookingState = BookingState.BLOCKED;
         chargingState = ChargingState.FULL;
 
-        assertEquals(statusLED.calculateColorCode(), ColorCode.RED);
+        assertEquals(ColorCode.RED, statusLED.calculateColorCode());
     }
 
     @Test
     public void blocked_discharging_test() throws Exception
     {
-        bookingState = BookingState.AVAILABLE;
+        bookingState = BookingState.BLOCKED;
         chargingState = ChargingState.DISCHARGING;
 
-        assertEquals(statusLED.calculateColorCode(), ColorCode.RED);
+        assertEquals(ColorCode.OFF, statusLED.calculateColorCode());
     }
 }

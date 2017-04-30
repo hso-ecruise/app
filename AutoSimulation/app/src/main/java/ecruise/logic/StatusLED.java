@@ -27,7 +27,7 @@ public class StatusLED
         if (bState == BookingState.BOOKED && cState == ChargingState.FULL)
             return CarState.BOOKED_FULL;
 
-        if(cState == ChargingState.DISCHARGING)
+        if (cState == ChargingState.DISCHARGING)
             throw new UnsupportedOperationException("Auto befindet sich nicht an der Ladesäule");
 
         return CarState.BLOCKED;
@@ -35,18 +35,24 @@ public class StatusLED
 
     public ColorCode calculateColorCode()
     {
-        switch (calculateCarState())
+        try
         {
-            case BOOKED_FULL:
-                return ColorCode.BLUE;
-            case BOOKED_CHARGING:
-                return ColorCode.BLUE;
-            case AVAILABLE_CHARGING:
-                return ColorCode.YELLOW;
-            case AVAILABLE_FULL:
-                return ColorCode.GREEN;
-            case BLOCKED:
-                return ColorCode.RED;
+            switch (calculateCarState())
+            {
+                case BOOKED_FULL:
+                    return ColorCode.BLUE;
+                case BOOKED_CHARGING:
+                    return ColorCode.BLUE;
+                case AVAILABLE_CHARGING:
+                    return ColorCode.YELLOW;
+                case AVAILABLE_FULL:
+                    return ColorCode.GREEN;
+                case BLOCKED:
+                    return ColorCode.RED;
+            }
+        } catch (UnsupportedOperationException e)
+        {
+            Logger.getInstance().log(e.getMessage());
         }
 
         return ColorCode.OFF;
