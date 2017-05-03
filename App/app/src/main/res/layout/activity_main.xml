@@ -7,24 +7,25 @@
     android:fitsSystemWindows="true"
     tools:context="me.ecruise.activitys.MainActivity">
 
+    <include layout="@layout/content_main" />
+
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/AppTheme.AppBarOverlay">
 
         <LinearLayout
-            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/dataButton"
+            <ImageButton
+                android:id="@+id/imageButton"
+                style="@style/Base.Widget.AppCompat.ActionButton.Overflow"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:elevation="0dp"
-                android:text="Daten" />
+                android:onClick="showPopup" />
 
             <Space
                 android:layout_width="wrap_content"
@@ -32,15 +33,13 @@
                 android:layout_weight="1" />
 
             <Button
-                android:text="Map"
+                android:id="@+id/mapButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/mapButton"
-                android:layout_weight="1" />
+                android:text="Map" />
+
         </LinearLayout>
 
     </android.support.design.widget.AppBarLayout>
-
-    <include layout="@layout/content_main" />
 
 </android.support.design.widget.CoordinatorLayout>
