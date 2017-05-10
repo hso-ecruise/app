@@ -6,9 +6,16 @@ package ecruise.data;
 public class ServerConnection implements IServerConnection
 {
     @Override
-    public boolean checkID(int UserID, int tripID)
+    public boolean checkID(String chipCardUid, int carID)
     {
-        return true;
+        switch (carID)
+        {
+            case 1:
+                return chipCardUid.equals("04:C3:B2:FA:E7:49:80");
+            case 2:
+                return chipCardUid.equals("04:AA:38:62:02:49:80");
+        }
+        return false;
     }
 
     @Override
@@ -20,6 +27,6 @@ public class ServerConnection implements IServerConnection
     @Override
     public ChargingState getChargingState()
     {
-        return ChargingState.CHARGING;
+        return ChargingState.FULL;
     }
 }

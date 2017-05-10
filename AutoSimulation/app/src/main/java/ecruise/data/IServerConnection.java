@@ -5,7 +5,7 @@ package ecruise.data;
  */
 public interface IServerConnection
 {
-    boolean checkID(int UserID, int tripID);
+    boolean checkID(String chipCardUid, int tripID);
     BookingState getBookingState();
     ChargingState getChargingState();
 }
