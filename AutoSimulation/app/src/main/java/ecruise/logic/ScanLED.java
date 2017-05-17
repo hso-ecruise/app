@@ -1,5 +1,6 @@
 package ecruise.logic;
 
+import android.content.Context;
 import ecruise.data.IScanDevice;
 import ecruise.data.NFCReader;
 import ecruise.data.Server;
@@ -9,13 +10,12 @@ import ecruise.data.Server;
  */
 public class ScanLED
 {
-    private final int ID;
+    private final int carID = 1;
     private IScanDevice scanDevice;
 
-    public ScanLED()
+    public ScanLED(IScanDevice scanDevice)
     {
-        ID = 554;
-        scanDevice = new NFCReader();
+        this.scanDevice = scanDevice;
     }
 
     public ColorCode calculateColorCode()
@@ -23,7 +23,7 @@ public class ScanLED
         switch (new StatusLED().calculateCarState())
         {
             case BOOKED_FULL:
-                if (Server.getConnection().checkID(scanDevice.scanUserId(), this.ID))
+                if (Server.getConnection().checkID(scanDevice.scanUserId(), carID))
                 {
                     return ColorCode.GREEN;
                 }
@@ -32,7 +32,7 @@ public class ScanLED
                     return ColorCode.RED;
                 }
             case BOOKED_CHARGING:
-                if (Server.getConnection().checkID(scanDevice.scanUserId(), this.ID))
+                if (Server.getConnection().checkID(scanDevice.scanUserId(), carID))
                 {
                     return ColorCode.YELLOW;
                 }
