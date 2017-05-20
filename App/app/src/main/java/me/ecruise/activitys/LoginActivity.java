@@ -3,6 +3,7 @@ package me.ecruise.activitys;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.app.LoaderManager.LoaderCallbacks;
@@ -17,6 +18,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -27,8 +29,20 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.android.volley.Request;
+import com.android.volley.toolbox.RequestFuture;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import me.ecruise.data.Customer;
+import me.ecruise.data.JsonStringRequest;
+import me.ecruise.data.Server;
 
 /**
  * A login screen that offers login via email/password.
@@ -92,7 +106,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mProgressView = findViewById(R.id.login_progress);
     }
 
-    private void startRegistration(){
+    private void startRegistration() {
         Intent intent = new Intent(LoginActivity.this, RegistrationActivity.class);
         startActivity(intent);
     }
@@ -144,7 +158,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(email, password);
+            mAuthTask = new UserLoginTask(email, password, this.getApplicationContext());
             mAuthTask.execute((Void) null);
         }
     }
@@ -257,32 +271,47 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         private final String mEmail;
         private final String mPassword;
+        private final Context mCtx;
 
-        UserLoginTask(String email, String password) {
+        UserLoginTask(String email, String password, Context ctx) {
             mEmail = email;
             mPassword = password;
+            mCtx = ctx;
         }
 
         @Override
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
 
+            String url = "https://api.ecruise.me/v1/public/login/" + mEmail;
+            String stringRequest = "\"" + mPassword + "\"";
+            RequestFuture<JSONObject> future = RequestFuture.newFuture();
+            JsonStringRequest jsObjRequest = new JsonStringRequest
+                    (Request.Method.POST, url, stringRequest, future, future);
+            String value = null;
             try {
-                // Simulate network access.
-                Thread.sleep(2);
-            } catch (InterruptedException e) {
+                value = new String(jsObjRequest.getBody(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            Log.d("URL", jsObjRequest.getUrl());
+            Log.d("BODY", value);
+
+            Server.getInstance(mCtx).addToRequestQueue(jsObjRequest);
+
+            try {
+                JSONObject response = future.get(); // this will block
+                Customer.getInstance(mCtx).setId(response.getInt("id"));
+                Customer.getInstance(mCtx).setToken(response.getString("token"));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            } catch (ExecutionException e1) {
+                e1.printStackTrace();
                 return false;
             }
-
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
-                }
-            }
-
-            return false;
+            return true;
         }
 
         @Override
