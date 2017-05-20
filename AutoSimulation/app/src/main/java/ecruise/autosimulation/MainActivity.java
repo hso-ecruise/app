@@ -1,8 +1,9 @@
 package ecruise.autosimulation;
 
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -10,14 +11,16 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import ecruise.data.NFCReader;
 import ecruise.data.Server;
 import ecruise.data.ServerConnection;
 import ecruise.logic.*;
 
 public class MainActivity extends AppCompatActivity
 {
-    private ScanLED scanLED = new ScanLED();
-    private StatusLED statusLED = new StatusLED();
+    private ScanLED scanLED;
+    private StatusLED statusLED;
+    private NFCReader nfcReader;
 
     public MainActivity()
     {
@@ -47,10 +50,13 @@ public class MainActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        nfcReader = new NFCReader(getApplicationContext());
+        scanLED = new ScanLED(nfcReader);
+        statusLED = new StatusLED();
 
         setStatusColorCode(statusLED.calculateColorCode());
 
-        final Handler handler = new Handler();
+        /*final Handler handler = new Handler();
         new Thread(new Runnable()
         {
             @Override
@@ -61,13 +67,43 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void run()
                     {
-                        ColorCode result = scanLED.calculateColorCode();
-                        blinkScanLED(colorsFromColorCode(result));
-                        setInfoText("RFID-Card gescannt");
+
                     }
                 }, 100);
             }
-        }).start();
+        }).start();*/
+    }
+
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        nfcReader.onResume(this);
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+        nfcReader.onPause(this);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent)
+    {
+        if (nfcReader.isReady(intent))
+        {
+            ColorCode result = scanLED.calculateColorCode();
+            blinkScanLED(colorsFromColorCode(result));
+            setInfoText("RFID-Card gescannt");
+
+            if (result == ColorCode.GREEN)
+            {
+                setStatusColorCode(ColorCode.OFF);
+                setStatusText(getResources().getString(R.string.discarging));
+            }
+
+        }
     }
 
     private int colorsFromColorCode(ColorCode colorCode)

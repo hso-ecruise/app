@@ -6,4 +6,5 @@
     <string name="booked">gebucht</string>
     <string name="available">verfügbar</string>
     <string name="diconnected">nicht verbunden</string>
+    <string name="discarging">geöffnet</string>
 </resources>

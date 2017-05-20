@@ -10,6 +10,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         LatLng ltlg = new LatLng(latit, longit);
         LatLng newLtLg = new LatLng(18, 28);
+
         createMarker("New Marker", new LatLng(14, 24));
 
         for(Marker marker : markers)
@@ -71,6 +73,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
            if(marker.getTitle().equals("New Marker"))
                setMarkerPosition(newLtLg, marker);
         }
+
+        LatLng custLtLg = new LatLng(10, 29);
+        setMarkerImage("One More Marker", custLtLg);
 
         /*CameraPosition cp = new CameraPosition.Builder().target(ltlg).zoom(4).build();
         CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);*/
@@ -84,16 +89,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return null;
     }
 
-    public boolean createMarker(String markerName, LatLng ltlg)
+    public void createMarker(String markerName, LatLng ltlg)
     {
         MarkerOptions mOpts = new MarkerOptions().position(ltlg).title(markerName);
         markers.add(mMap.addMarker(mOpts));
-        return false;
     }
 
-    public boolean setMarkerPosition(LatLng pos, Marker marker)
+    public void setMarkerPosition(LatLng pos, Marker marker)
     {
         marker.setPosition(pos);
-        return false;
+    }
+
+    public void setMarkerImage(String markerName, LatLng ltlg)
+    {
+        MarkerOptions mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker") .icon(BitmapDescriptorFactory.fromResource(R.mipmap.free_station_gmap));
+        markers.add(mMap.addMarker(mOpts));
     }
 }

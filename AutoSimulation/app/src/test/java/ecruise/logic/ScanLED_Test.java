@@ -1,9 +1,6 @@
 package ecruise.logic;
 
-import ecruise.data.BookingState;
-import ecruise.data.ChargingState;
-import ecruise.data.IServerConnection;
-import ecruise.data.Server;
+import ecruise.data.*;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,7 +19,7 @@ public class ScanLED_Test
     public IServerConnection testServer = new IServerConnection()
     {
         @Override
-        public boolean checkID(int UserID, int tripID)
+        public boolean checkID(String chipCardUid, int carID)
         {
             return checkID;
         }
@@ -41,7 +38,16 @@ public class ScanLED_Test
 
     };
 
-    ScanLED scanLED = new ScanLED();
+    public IScanDevice testNFCReader = new IScanDevice()
+    {
+        @Override
+        public String scanUserId()
+        {
+            return "";
+        }
+    };
+
+    ScanLED scanLED = new ScanLED(testNFCReader);
 
     @Before
     public void setUp() throws Exception
