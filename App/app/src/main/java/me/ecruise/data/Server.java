@@ -1,46 +1,77 @@
 package me.ecruise.data;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.util.Log;
+import android.util.LruCache;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class Server
 {
-    private static Server ourInstance = new Server();
+    private static Server mInstance;
+    private RequestQueue mRequestQueue;
+    private ImageLoader mImageLoader;
+    private static Context mCtx;
 
-    public static Server getInstance()
+    private Server(Context context)
     {
-        return ourInstance;
+        mCtx = context;
+        mRequestQueue = getRequestQueue();
+
+        mImageLoader = new ImageLoader(mRequestQueue,
+                new ImageLoader.ImageCache() {
+                    private final LruCache<String, Bitmap>
+                            cache = new LruCache<String, Bitmap>(20);
+
+                    @Override
+                    public Bitmap getBitmap(String url) {
+                        return cache.get(url);
+                    }
+
+                    @Override
+                    public void putBitmap(String url, Bitmap bitmap) {
+                        cache.put(url, bitmap);
+                    }
+                });
     }
 
-    private Server()
-    {
+    public static synchronized Server getInstance(Context context) {
+        if (mInstance == null) {
+            mInstance = new Server(context);
+        }
+        return mInstance;
+    }
+
+    public RequestQueue getRequestQueue() {
+        if (mRequestQueue == null) {
+            // getApplicationContext() is key, it keeps you from leaking the
+            // Activity or BroadcastReceiver if someone passes one in.
+            mRequestQueue = Volley.newRequestQueue(mCtx.getApplicationContext());
+        }
+        return mRequestQueue;
+    }
+
+    public <T> void addToRequestQueue(Request<T> req) {
+        getRequestQueue().add(req);
+    }
+
+    public ImageLoader getImageLoader() {
+        return mImageLoader;
     }
 
     public boolean checkLoginData(String email, String password) {
-        return true;
-    }
-
-    public CustomerData getUserData(){
-        CustomerData customerData = new CustomerData();
-
-        //server call to get UserData
-        customerData.city = "Offenburg";
-        customerData.country = "Deutschland";
-        customerData.email = "a@a.a";
-        customerData.extraAddressLine = "";
-        customerData.houseNumber = "8";
-        customerData.lastname = "Lustig";
-        customerData.name = "Peter";
-        customerData.password = "aaaaa";
-        customerData.phoneNumber = "12345";
-        customerData.street = "Regenbogen-Boulevard";
-        customerData.zipCode = "99999";
-
-        return customerData;
-    }
-
-    public boolean updateUserData(CustomerData customerData){
-
-        //server call to set UserData
-
-        //true if successfull
         return true;
     }
 
