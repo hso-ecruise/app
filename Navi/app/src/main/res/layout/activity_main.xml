@@ -35,7 +35,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Legende" />
+                android:text="Legende"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
         </LinearLayout>
 
@@ -50,9 +53,8 @@
                 android:id="@+id/imageView5"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:scaleType="matrix"
-                app:srcCompat="@mipmap/reserved2"
+                app:srcCompat="@mipmap/own_car"
                 tools:ignore="ContentDescription,InefficientWeight" />
 
             <TextView
@@ -60,7 +62,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Ihr Standort" />
+                android:text="Ihr Standort"
+                android:textColor="@color/white" />
 
         </LinearLayout>
 
@@ -77,7 +80,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:scaleType="matrix"
-                app:srcCompat="@mipmap/reserved2"
+                app:srcCompat="@mipmap/free_station_gmap"
                 tools:ignore="ContentDescription,InefficientWeight" />
 
             <TextView
@@ -85,7 +88,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Freie Ladestation" />
+                android:text="Freie Ladestation"
+                android:textColor="@color/white" />
 
         </LinearLayout>
 
@@ -101,7 +105,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Status" />
+                android:text="Status"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
         </LinearLayout>
 
@@ -112,21 +119,21 @@
             android:background="@color/colorPrimary"
             android:orientation="horizontal">
 
-            <ImageView
-                android:id="@+id/imageView8"
+            <TextView
+                android:id="@+id/textView6"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="matrix"
-                app:srcCompat="@mipmap/reserved2"
-                tools:ignore="ContentDescription,InefficientWeight" />
+                android:layout_weight="0.21"
+                android:text="90%"
+                android:textColor="@color/white" />
 
             <TextView
                 android:id="@+id/textView4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Akku" />
+                android:layout_weight="0.75"
+                android:text="Akku"
+                android:textColor="@color/white" />
 
         </LinearLayout>
 
@@ -141,19 +148,25 @@
                 android:id="@+id/imageView6"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:scaleType="matrix"
-                app:srcCompat="@mipmap/reserved2"
+                app:srcCompat="@mipmap/no_internet"
                 tools:ignore="ContentDescription,InefficientWeight" />
 
             <TextView
                 android:id="@+id/textView2"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Kein Internet" />
+                android:text="Kein Internet"
+                android:textColor="@color/white" />
 
         </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.00">
+
+        </RelativeLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -162,15 +175,15 @@
             android:background="@color/colorPrimary"
             android:orientation="horizontal">
 
+            <Button
+                android:id="@+id/centerButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal|center"
+                android:layout_weight="1"
+                android:background="@color/buttonColor"
+                android:text="@string/zentrieren" />
         </LinearLayout>
-
-        <Button
-            android:id="@+id/centerButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal|center"
-            android:background="@color/buttonColor"
-            android:text="@string/zentrieren" />
 
     </LinearLayout>
 
