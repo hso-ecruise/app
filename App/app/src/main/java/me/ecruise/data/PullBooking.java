@@ -1,19 +1,21 @@
 package me.ecruise.data;
 
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.v7.app.NotificationCompat;
+import me.ecruise.activitys.MainActivity;
 import me.ecruise.activitys.R;
 
-import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class PullBooking extends Service
 {
     private Timer timer = new Timer();
+
+    private int recievedBooking = 0;
 
     public PullBooking()
     {
@@ -39,20 +41,30 @@ public class PullBooking extends Service
             @Override
             public void run()
             {
-                String infoText;
-                // getBuchungen
-                infoText = "Nächste Buchung um 18:00 am 19.05.17";
+                if (Customer.getInstance(PullBooking.this).getName() != null)
+                {
+                    // getBuchungen()
 
+                    int latestBookingID = 0;
 
-                NotificationCompat.Builder mBuilder =
-                        (NotificationCompat.Builder) new NotificationCompat.Builder(PullBooking.this)
-                                .setSmallIcon(R.drawable.ic_play_light)
-                                .setContentTitle("eCruise - Buchung")
-                                .setContentText(infoText);
-                int mNotificationId = new Random().nextInt();
-                NotificationManager mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                mNotifyMgr.notify(mNotificationId, mBuilder.build());
+                    if(recievedBooking != latestBookingID)
+                    {
+                        recievedBooking = latestBookingID;
+                        String infoText = "Test";
+
+                        NotificationCompat.Builder mBuilder =
+                                (NotificationCompat.Builder) new NotificationCompat.Builder(PullBooking.this)
+                                        .setSmallIcon(R.drawable.ic_play_light)
+                                        .setContentTitle("eCruise - Buchung")
+                                        .setContentText(infoText)
+                                        .setContentIntent(PendingIntent.getActivity(PullBooking.this, 0,
+                                                new Intent(PullBooking.this, MainActivity.class), 0));
+                        int mNotificationId = new Random().nextInt();
+                        NotificationManager mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                        mNotifyMgr.notify(mNotificationId, mBuilder.build());
+                    }
+                }
             }
-        },0, 30000 );
+        }, 0, 30000);
     }
 }
