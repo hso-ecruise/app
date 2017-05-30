@@ -30,7 +30,7 @@
                 android:orientation="vertical" >
 
                 <TextView
-                    android:id="@+id/nameText"
+                    android:id="@+id/nameTextView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Vorname:"
@@ -72,6 +72,20 @@
                     android:id="@+id/emailText" />
 
                 <TextView
+                    android:id="@+id/textView6"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="E-Mail-Adresse wiederholen:"
+                    android:textAppearance="@android:style/TextAppearance.Material.Medium" />
+
+                <EditText
+                    android:id="@+id/emailText2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ems="10"
+                    android:inputType="textEmailAddress" />
+
+                <TextView
                     android:text="Passwort:"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -93,11 +107,11 @@
                     android:textAppearance="@android:style/TextAppearance.Material.Medium" />
 
                 <EditText
+                    android:id="@+id/passwordText2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPassword"
                     android:ems="10"
-                    android:id="@+id/password2Text" />
+                    android:inputType="textPassword" />
 
             </LinearLayout>
         </ScrollView>

@@ -228,6 +228,40 @@ public class Customer {
         return updated;
     }
 
+    public void registerUser()
+    {
+        String url = "https://api.ecruise.me/v1/customers/";
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("Email", email);
+            jsonObject.put("Password", password);
+            jsonObject.put("FirstName", name);
+            jsonObject.put("LastName", lastname);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            id = response.getInt("id");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // TODO Auto-generated method stub
+
+                    }
+                });
+        Server.getInstance(mCtx).addToRequestQueue(jsObjRequest);
+    }
+
     public int getId() {
         return id;
     }
