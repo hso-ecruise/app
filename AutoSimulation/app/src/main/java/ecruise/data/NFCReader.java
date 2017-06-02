@@ -51,6 +51,7 @@ public class NFCReader implements IScanDevice
             sb.setLength(sb.length() - 1);
 
             chipCardUid = sb.toString();
+            Logger.getInstance().log("TagID: " + chipCardUid);
         }
         catch (Exception e)
         {

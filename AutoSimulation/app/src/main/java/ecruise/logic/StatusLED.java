@@ -14,7 +14,6 @@ public class StatusLED
         BookingState bState = Server.getConnection().getBookingState();
         ChargingState cState = Server.getConnection().getChargingState();
 
-
         if (bState == BookingState.AVAILABLE && cState == ChargingState.CHARGING)
             return CarState.AVAILABLE_CHARGING;
 

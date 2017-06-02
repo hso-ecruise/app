@@ -4,8 +4,11 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
@@ -16,11 +19,23 @@ import ecruise.data.Server;
 import ecruise.data.ServerConnection;
 import ecruise.logic.*;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class MainActivity extends AppCompatActivity
 {
     private ScanLED scanLED;
     private StatusLED statusLED;
     private NFCReader nfcReader;
+
+    private Timer statusTimer = new Timer();
+
+    public Handler updateHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            Log.d("MainActivity", "update Status");
+            setStatusColorCode(statusLED.calculateColorCode());
+        }
+    };
 
     public MainActivity()
     {
@@ -42,7 +57,6 @@ public class MainActivity extends AppCompatActivity
                 });
             }
         });
-        Server.setConnection(new ServerConnection());
     }
 
     @Override
@@ -50,28 +64,20 @@ public class MainActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Server.setConnection(new ServerConnection(getApplicationContext()));
         nfcReader = new NFCReader(getApplicationContext());
         scanLED = new ScanLED(nfcReader);
         statusLED = new StatusLED();
 
-        setStatusColorCode(statusLED.calculateColorCode());
 
-        /*final Handler handler = new Handler();
-        new Thread(new Runnable()
+        statusTimer.scheduleAtFixedRate(new TimerTask()
         {
             @Override
             public void run()
             {
-                handler.postDelayed(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-
-                    }
-                }, 100);
+                updateHandler.obtainMessage(1).sendToTarget();
             }
-        }).start();*/
+        }, 5000, 30000);
     }
 
     @Override
