@@ -4,23 +4,37 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.widget.ScrollView;
-import android.widget.TextView;
-import ecruise.data.NFCReader;
-import ecruise.data.Server;
-import ecruise.data.ServerConnection;
+import android.widget.*;
+import ecruise.data.*;
 import ecruise.logic.*;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity
 {
     private ScanLED scanLED;
     private StatusLED statusLED;
-    private NFCReader nfcReader;
+    private IScanDevice nfcReader;
+
+    private Timer statusTimer = new Timer();
+
+    public Handler updateHandler = new Handler()
+    {
+        public void handleMessage(Message msg)
+        {
+            Log.d("MainActivity", "update Status");
+            setStatusColorCode(statusLED.calculateColorCode());
+        }
+    };
 
     public MainActivity()
     {
@@ -42,7 +56,6 @@ public class MainActivity extends AppCompatActivity
                 });
             }
         });
-        Server.setConnection(new ServerConnection());
     }
 
     @Override
@@ -50,58 +63,103 @@ public class MainActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        nfcReader = new NFCReader(getApplicationContext());
+        Server.setConnection(new ServerConnection(getApplicationContext()));
+
+        try
+        {
+            nfcReader = new NFCReader(getApplicationContext());
+        } catch (Exception e)
+        {
+            nfcReader = new DemoNFCReader();
+            LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutFallback);
+            linearLayout.setVisibility(View.VISIBLE);
+            Button button = (Button) findViewById(R.id.buttonScanNfc);
+            button.setOnClickListener(new View.OnClickListener()
+            {
+                @Override
+                public void onClick(View v)
+                {
+                    EditText editText = (EditText) findViewById(R.id.editTextNfcId);
+                    String userId = editText.getText().toString();
+                    ((DemoNFCReader) nfcReader).setUserID(userId);
+                    ColorCode result = scanLED.calculateColorCode();
+                    blinkScanLED(colorsFromColorCode(result));
+                    setInfoText("RFID-Card gescannt");
+
+                    if (result == ColorCode.GREEN)
+                    {
+                        setStatusColorCode(ColorCode.OFF);
+                        setStatusText(getResources().getString(R.string.discarging));
+                        ((DemoServerConnection) Server.getConnection()).SetDischarging();
+                        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutFallback);
+                        linearLayout.setVisibility(View.GONE);
+
+                    }
+                }
+            });
+        }
+
+
         scanLED = new ScanLED(nfcReader);
         statusLED = new StatusLED();
 
-        setStatusColorCode(statusLED.calculateColorCode());
 
-        /*final Handler handler = new Handler();
-        new Thread(new Runnable()
+        statusTimer.scheduleAtFixedRate(new TimerTask()
         {
             @Override
             public void run()
             {
-                handler.postDelayed(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-
-                    }
-                }, 100);
+                updateHandler.obtainMessage(1).sendToTarget();
             }
-        }).start();*/
+        }, 5000, 1000);
     }
 
     @Override
     protected void onResume()
     {
         super.onResume();
-        nfcReader.onResume(this);
+        try
+        {
+            ((NFCReader) nfcReader).onResume(this);
+        } catch (ClassCastException e)
+        {
+
+        }
     }
 
     @Override
     protected void onPause()
     {
         super.onPause();
-        nfcReader.onPause(this);
+        try
+        {
+            ((NFCReader) nfcReader).onPause(this);
+        } catch (ClassCastException e)
+        {
+
+        }
     }
 
     @Override
     protected void onNewIntent(Intent intent)
     {
-        if (nfcReader.isReady(intent))
+        try
         {
-            ColorCode result = scanLED.calculateColorCode();
-            blinkScanLED(colorsFromColorCode(result));
-            setInfoText("RFID-Card gescannt");
-
-            if (result == ColorCode.GREEN)
+            if (((NFCReader) nfcReader).isReady(intent))
             {
-                setStatusColorCode(ColorCode.OFF);
-                setStatusText(getResources().getString(R.string.discarging));
+                ColorCode result = scanLED.calculateColorCode();
+                blinkScanLED(colorsFromColorCode(result));
+                setInfoText("RFID-Card gescannt");
+
+                if (result == ColorCode.GREEN)
+                {
+                    setStatusColorCode(ColorCode.OFF);
+                    setStatusText(getResources().getString(R.string.discarging));
+
+                }
             }
+        } catch (ClassCastException e)
+        {
 
         }
     }
@@ -145,10 +203,10 @@ public class MainActivity extends AppCompatActivity
                 setStatusText(getResources().getString(R.string.not_available));
                 break;
             case YELLOW:
-                setStatusText(getResources().getString(R.string.not_available));
+                setStatusText(getResources().getString(R.string.later_available));
                 break;
             case GREEN:
-                setStatusText(getResources().getString(R.string.later_available));
+                setStatusText(getResources().getString(R.string.available));
                 break;
             case BLUE:
                 setStatusText(getResources().getString(R.string.booked));

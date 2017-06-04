@@ -36,7 +36,7 @@ public class Customer {
     }
 
     public static synchronized Customer getInstance(Context context) {
-        if (mInstance == null) {
+        if (mInstance == null && context != null) {
             mInstance = new Customer(context);
         }
         return mInstance;

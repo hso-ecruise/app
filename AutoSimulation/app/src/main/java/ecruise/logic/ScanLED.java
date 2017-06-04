@@ -10,7 +10,6 @@ import ecruise.data.Server;
  */
 public class ScanLED
 {
-    private final int carID = 1;
     private IScanDevice scanDevice;
 
     public ScanLED(IScanDevice scanDevice)
@@ -23,7 +22,7 @@ public class ScanLED
         switch (new StatusLED().calculateCarState())
         {
             case BOOKED_FULL:
-                if (Server.getConnection().checkID(scanDevice.scanUserId(), carID))
+                if (Server.getConnection().checkID(scanDevice.scanUserId()))
                 {
                     return ColorCode.GREEN;
                 }
@@ -32,7 +31,7 @@ public class ScanLED
                     return ColorCode.RED;
                 }
             case BOOKED_CHARGING:
-                if (Server.getConnection().checkID(scanDevice.scanUserId(), carID))
+                if (Server.getConnection().checkID(scanDevice.scanUserId()))
                 {
                     return ColorCode.YELLOW;
                 }
