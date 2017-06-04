@@ -27,7 +27,7 @@ public class StatusLED
             return CarState.BOOKED_FULL;
 
         if (cState == ChargingState.DISCHARGING)
-            throw new UnsupportedOperationException("Auto befindet sich nicht an der Ladesäule");
+            return CarState.DISCHARGING;
 
         return CarState.BLOCKED;
     }
@@ -48,6 +48,8 @@ public class StatusLED
                     return ColorCode.GREEN;
                 case BLOCKED:
                     return ColorCode.RED;
+                case DISCHARGING:
+                    return ColorCode.OFF;
             }
         } catch (UnsupportedOperationException e)
         {

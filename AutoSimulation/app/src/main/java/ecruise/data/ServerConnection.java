@@ -205,11 +205,11 @@ public class ServerConnection implements IServerConnection
                             {
                                 JSONObject trip = null;
                                 trip = trips.getJSONObject(i);
-                                String startDate = trip.getString("startDate");
-                                String endDate = trip.getString("endDate");
 
-                                // trip has started but not ended
-                                if (!startDate.equals("") && endDate.equals(""))
+                                JsonDate startDate = new JsonDate(trip.getString("startDate"));
+
+                                // trip is in future ("30 min booking")
+                                if (startDate.getCalendar().after(Calendar.getInstance()))
                                 {
                                     String customerId = trip.getString("customerId");
 
@@ -252,6 +252,9 @@ public class ServerConnection implements IServerConnection
                             }
                         }
                         catch (JSONException e)
+                        {
+                            e.printStackTrace();
+                        } catch (ParseException e)
                         {
                             e.printStackTrace();
                         }

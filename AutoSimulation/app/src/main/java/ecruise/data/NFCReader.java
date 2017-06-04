@@ -8,6 +8,8 @@ import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import ecruise.logic.Logger;
 
+import java.util.NoSuchElementException;
+
 /**
  * Created by Tom on 21.03.2017.
  */
@@ -22,10 +24,12 @@ public class NFCReader implements IScanDevice
         if (nfcAdapter == null)
         {
             Logger.getInstance().log("Dieses Gerät unterstützt kein NFC");
+            throw new NoSuchElementException("No NFC found on this device");
         }
         if (!nfcAdapter.isEnabled())
         {
             Logger.getInstance().log("Auf diesem Gerät ist NFC ausgeschaltet");
+            throw new NoSuchElementException("No NFC enabled on this device");
         }
     }
 

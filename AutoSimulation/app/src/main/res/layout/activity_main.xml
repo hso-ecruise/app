@@ -23,9 +23,26 @@
                     android:layout_width="match_parent"
                     android:id="@+id/log" android:layout_height="wrap_content" android:typeface="monospace"/>
         </ScrollView>
+        <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/linearLayoutFallback"
+                android:visibility="gone">
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName"
+                    android:text="04:AA:38:62:02:49:80"
+                    android:ems="10"
+                    android:id="@+id/editTextNfcId"/>
+            <Button
+                    android:text="Scan chipCardUid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/buttonScanNfc"/>
+        </LinearLayout>
         <View
                 android:layout_width="match_parent"
-                android:layout_height="76dp" android:background="@color/colorAccent" android:id="@+id/statusLed"/>
+                android:layout_height="76dp" android:background="@color/colorConnecting" android:id="@+id/statusLed"/>
 
         <Space
                 android:layout_width="match_parent"
@@ -64,10 +81,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" android:gravity="center_horizontal">
                 <TextView
-                        android:text="TextView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" android:id="@+id/statusText" android:textSize="18sp"
-                        android:textColor="@android:color/black"/>
+                        android:textColor="@android:color/black" android:text="@string/connecting"/>
                 <Button
                         android:text="Test"
                         android:layout_width="wrap_content"
