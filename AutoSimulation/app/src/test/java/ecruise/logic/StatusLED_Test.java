@@ -27,7 +27,7 @@ public class StatusLED_Test
     public IServerConnection testServer = new IServerConnection()
     {
         @Override
-        public boolean checkID(String chipCardUid, int tripID)
+        public boolean checkID(String chipCardUid)
         {
             return checkID;
         }

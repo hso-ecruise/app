@@ -19,7 +19,7 @@ public class ScanLED_Test
     public IServerConnection testServer = new IServerConnection()
     {
         @Override
-        public boolean checkID(String chipCardUid, int carID)
+        public boolean checkID(String chipCardUid)
         {
             return checkID;
         }

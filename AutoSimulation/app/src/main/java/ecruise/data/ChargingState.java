@@ -5,5 +5,5 @@ package ecruise.data;
  */
 public enum ChargingState
 {
-    DISCHARGING, CHARGING, FULL
+    DISCHARGING, CHARGING, FULL,
 }
