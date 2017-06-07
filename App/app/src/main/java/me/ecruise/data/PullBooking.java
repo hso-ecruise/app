@@ -57,7 +57,7 @@ public class PullBooking extends Service
             {
                 if (Customer.getInstance(null) != null)
                 {
-                    checkNewTripAssigned();
+                    //checkNewTripAssigned();
                 }
             }
         }, 0, 30000);

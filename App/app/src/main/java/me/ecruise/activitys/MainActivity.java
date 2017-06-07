@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutCompat;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -13,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.PopupMenu.OnMenuItemClickListener;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -23,11 +25,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import me.ecruise.data.Booking;
 import me.ecruise.data.Customer;
 import me.ecruise.data.Server;
 
-public class MainActivity extends AppCompatActivity implements OnMenuItemClickListener{
+public class MainActivity extends AppCompatActivity implements OnMenuItemClickListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,15 +61,17 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         getBookingsFromServer();
     }
 
-    private void startAccountManagement(){
+    private void startAccountManagement() {
         Intent intent = new Intent(this, AccountManagementActivity.class);
         startActivity(intent);
     }
-    private void startMap(){
+
+    private void startMap() {
         Intent intent = new Intent(this, Map2Activity.class);
         startActivity(intent);
     }
-    private void startNewBooking(){
+
+    private void startNewBooking() {
         Intent intent = new Intent(this, BookingActivity.class);
         startActivity(intent);
     }
@@ -77,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
 
         popup.show();
     }
+
     @Override
     public boolean onMenuItemClick(MenuItem item) {
         // Handle item selection
@@ -84,8 +92,10 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
             case R.id.data:
                 startAccountManagement();
                 return true;
+            case R.id.notifications:
+                return true;
             case R.id.logout:
-                startAccountManagement();
+                Customer.getInstance(this.getApplicationContext()).logout();
                 return true;
 
             default:
@@ -93,16 +103,19 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         }
     }
 
-    public void getBookingsFromServer()
-    {
-        String url = "https://api.ecruise.me/v1/bookings/by-customer/1";// + Customer.getInstance(this.getApplicationContext()).getId();
+    public void getBookingsFromServer() {
+        final String mToken = Customer.getInstance(this.getApplicationContext()).getToken();
+        String url = "https://api.ecruise.me/v1/bookings/by-customer/" + Customer.getInstance(this.getApplicationContext()).getId();
         JsonArrayRequest jsonArrayRequest = new JsonArrayRequest
                 (Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
 
                     @Override
                     public void onResponse(JSONArray response) {
                         showBookings(response);
+                        Log.d("booking: ", response.toString());
                     }
+
+
                 }, new Response.ErrorListener() {
 
                     @Override
@@ -110,20 +123,32 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
                         // TODO Auto-generated method stub
 
                     }
-                });
+
+
+                }) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+                params.put("access_token", mToken);
+                return params;
+            }
+        };
         Server.getInstance(this.getApplicationContext()).addToRequestQueue(jsonArrayRequest);
     }
 
-    public void showBookings(JSONArray bookings)
-    {
-        LinearLayout ll = (LinearLayout)findViewById(R.id.bookings);
+    public void showBookings(JSONArray bookings) {
+        LinearLayout ll = (LinearLayout) findViewById(R.id.bookings);
         LinearLayoutCompat.LayoutParams lp = new LinearLayoutCompat.LayoutParams(LinearLayoutCompat.LayoutParams.MATCH_PARENT, LinearLayoutCompat.LayoutParams.WRAP_CONTENT);
-        for (int i = 0; i < bookings.length(); i++)
-        {
-            Booking bookingButton = null;
+        for (int i = 0; i < bookings.length(); i++) {
+            Booking bookingButton;
             try {
-                bookingButton = new Booking(this.getApplicationContext(), bookings.getJSONObject(i).getInt("customerId"), 0, bookings.getJSONObject(i).getString("plannedDate"));
+                bookingButton = new Booking(this.getApplicationContext(), bookings.getJSONObject(i).getInt("bookingId"), 0, bookings.getJSONObject(i).getString("plannedDate"));
                 ll.addView(bookingButton, lp);
+                bookingButton.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        startMap();
+                    }
+                });
             } catch (JSONException e) {
                 e.printStackTrace();
             }

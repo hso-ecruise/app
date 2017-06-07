@@ -28,6 +28,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
 import me.ecruise.data.PullBooking;
 
 import com.android.volley.Request;
@@ -174,7 +175,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
     private boolean isPasswordValid(String password) {
         //TODO: Replace this with your own logic
-        return password.length() > 4;
+        return password.length() > 3;
     }
 
     /**
@@ -307,6 +308,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 JSONObject response = future.get(); // this will block
                 Customer.getInstance(mCtx).setId(response.getInt("id"));
                 Customer.getInstance(mCtx).setToken(response.getString("token"));
+                Customer.getInstance(mCtx).setPassword(mPassword);
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (InterruptedException e1) {

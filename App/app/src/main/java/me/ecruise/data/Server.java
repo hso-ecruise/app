@@ -66,13 +66,4 @@ public class Server
     public <T> void addToRequestQueue(Request<T> req) {
         getRequestQueue().add(req);
     }
-
-    public ImageLoader getImageLoader() {
-        return mImageLoader;
-    }
-
-    public boolean checkLoginData(String email, String password) {
-        return true;
-    }
-
 }

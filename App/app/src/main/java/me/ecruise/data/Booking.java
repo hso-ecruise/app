@@ -1,6 +1,7 @@
 package me.ecruise.data;
 
 import android.content.Context;
+import android.view.View;
 import android.widget.Button;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -19,6 +20,7 @@ public class Booking extends Button {
     private String bookingDateString;
     private String plannedDateString;
     private LatLng bookedPos;
+    private LatLng carPos;
 
     public int getID() {
         return ID;
@@ -69,9 +71,7 @@ public class Booking extends Button {
         this.ID = ID;
         this.carID = carID;
         this.plannedDateString = plannedDateString;
-        this.setText("Buchung Nr." + ID +"\n"+ plannedDateString);
+        this.setText("Buchung Nr." + ID + "\n" + plannedDateString + "\n" + carID + "");
     }
-
-
 
 }
