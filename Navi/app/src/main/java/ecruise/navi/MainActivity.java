@@ -2,13 +2,13 @@ package ecruise.navi;
 
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import com.android.volley.AuthFailureError;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 // Fetching the data from web service
                 data = downloadUrl(url[0]);
-                Log.d("Background Task data", data.toString());
+                Log.d("Background Task data", data);
             } catch (Exception e) {
                 Log.d("Background Task", e.toString());
             }
@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         private String downloadUrl(String strUrl) throws IOException
         {
             String data = "";
-            InputStream iStream = null;
+            InputStream iStream;
             HttpURLConnection urlConnection = null;
 
             try
@@ -86,21 +86,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
 
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
 
-                String line = "";
+                String line;
                 while ((line = br.readLine()) != null) {
                     //Log.d("downloadUrl:LINE: ", line);
                     sb.append(line);
                 }
 
                 data = sb.toString();
-                Log.d("downloadUrl", data.toString());
+                Log.d("downloadUrl", data);
                 br.close();
 
             } catch (Exception e) {
                 Log.d("Exception", e.toString());
             } finally {
+                assert urlConnection != null;
                 urlConnection.disconnect();
             }
 
@@ -119,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             try {
                 jObject = new JSONObject(jsonData[0]);
-                Log.d("ParserTask",jsonData[0].toString());
+                Log.d("ParserTask", jsonData[0]);
                 DataParser parser = new DataParser();
                 Log.d("ParserTask", parser.toString());
 
@@ -163,6 +164,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 // Adding all the points in the route to LineOptions
                 lineOptions.addAll(points);
+                myRoute = points;
+
                 lineOptions.width(10);
                 lineOptions.color(Color.RED);
 
@@ -184,6 +187,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private GoogleMap mMap;
     private ArrayList<Marker> markers = new ArrayList<>();
+    private ArrayList<LatLng> myRoute = new ArrayList<>();
+    private static int counterForRoute = 0;
+    private static long timer = 0;
+    private static boolean countStarted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -214,18 +221,66 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void centerMarker()
     {
         actualizeMap();
+        drawRoute();
+        moveCar();
+    }
 
-        createMarker("My car", new LatLng(49.485, 8.468));
-        setMarkerImage("My car", "owncar", new LatLng(49.485, 8.468));
-        CameraPosition cp = new CameraPosition.Builder().target(new LatLng(49.485, 8.468)).zoom(18).build();
-        CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
-        mMap.moveCamera(cu);
+
+    private void moveCar()
+    {
+        Long value = timer;
+        Log.d("TIMER", "CURRENT TIME =" + String.valueOf(value));
+        counterForRoute = value.intValue();
+
+        if(counterForRoute == 0 && myRoute.size() > 0)
+        {
+            if(!countStarted)
+            {
+                startCountDown();
+                countStarted = true;
+            }
+            Log.d("MYROUTESIZE", String.valueOf(myRoute.size()));
+            LatLng currPos = myRoute.get(counterForRoute);
+            createMarker("My car", currPos, "TrueCarId");
+            setMarkerImage("TrueCarId", "owncar");
+            CameraPosition cp = new CameraPosition.Builder().target(currPos).zoom(16).build();
+            CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
+            mMap.moveCamera(cu);
+            counterForRoute++;
+        }
+        else if(counterForRoute < myRoute.size() && myRoute.size() > 0)
+        {
+            Log.d("moveCar()", "------------------DRAWING CAR----------------");
+            LatLng currPos = myRoute.get(counterForRoute);
+            createMarker("My car", currPos, "TrueCarId");
+            setMarkerImage("TrueCarId", "owncar");
+            setMarkerPosition(currPos, getMarkerOnSnippet("TrueCarId"));
+            CameraPosition cp = new CameraPosition.Builder().target(currPos).zoom(16).build();
+            CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
+            mMap.moveCamera(cu);
+            counterForRoute++;
+        }
+        else
+        {
+            Log.d("moveCar()", "---------------SOMETHING WENT WRONG. DATA HERE = " + counterForRoute + ", " +  myRoute.size());
+        }
+    }
+    private Marker getMarkerOnSnippet(String snippet)
+    {
+        for(int i = 0; i < markers.size(); i++)
+        {
+            if(markers.get(i).getSnippet().equals(snippet))
+                return markers.get(i);
+        }
+
+        return null;
     }
 
     private void initAllMarkers(JSONArray jArray)
     {
         JSONObject jObject;
         LatLng cords;
+
         try
         {
             for (int i = 0; i < jArray.length(); i++)
@@ -233,15 +288,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 jObject = (JSONObject) jArray.get(i);
                 cords = new LatLng((Double) jObject.get("latitude"), (Double) jObject.get("longitude"));
                 Log.d("initAllMarkers", cords.toString());
-                createMarker(jObject.getInt("slots") + " Slots", cords);
+
+                createMarker(jObject.getInt("slots") + " Slots", cords, String.valueOf(jObject.getInt("chargingStationId")));
 
                 if(jObject.getInt("slotsOccupied") < jObject.getInt("slots"))
-                    setMarkerImage(jObject.getInt("slots") + " Slots", "freestation", cords);
+                    setMarkerImage(String.valueOf(jObject.getInt("chargingStationId")), "freestation");
                 else
-                    setMarkerImage(jObject.getInt("slots") + " Slots", "occupiedstation", cords);
+                    setMarkerImage(String.valueOf(jObject.getInt("chargingStationId")), "occupiedstation");
             }
-
-            drawRoute();
         }
         catch(Exception e)
         {
@@ -259,8 +313,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     {
                         try
                         {
-                            JSONArray jArray = result;
-                            initAllMarkers(jArray);
+                            initAllMarkers(result);
                         }
                         catch (Exception e)
                         {
@@ -272,31 +325,38 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private String getUrl(LatLng orig, LatLng dest)
     {
-        String url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + orig.latitude + ","  + orig.longitude  + "&destination="+ dest.latitude + "," + dest.longitude + "&sensor=false&units=metric&mode=driving&key=AIzaSyCJ32t4b_NZ1MY_dDW6XKf5hYLLZOddRVQ";
-        return url;
+        return "https://maps.googleapis.com/maps/api/directions/json?origin=" + orig.latitude + ","  + orig.longitude  + "&destination="+ dest.latitude + "," + dest.longitude + "&sensor=false&units=metric&mode=driving&key=AIzaSyCJ32t4b_NZ1MY_dDW6XKf5hYLLZOddRVQ";
     }
 
-    private void drawRoute()
+    private boolean drawRoute()
     {
-
         LatLng origin = new LatLng(49.485000, 8.468000);
         LatLng dest = new LatLng(49.500000, 8.500000);
 
         // Getting URL to the Google Directions API
         String url = getUrl(origin, dest);
-        Log.d("drawRoute()SETTING URL:", url.toString());
+        Log.d("drawRoute()SETTING URL:", url);
         FetchUrl FetchUrl = new FetchUrl();
         // Start downloading json data from Google Directions API
         FetchUrl.execute(url);
-        //move map camera
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(origin));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(18));
+        return true;
     }
 
-    private void createMarker(String markerName, LatLng ltlg)
+    private void createMarker(String markerName, LatLng ltlg, String snippetId)
     {
-        MarkerOptions mOpts = new MarkerOptions().position(ltlg).title(markerName);
-        markers.add(mMap.addMarker(mOpts));
+        boolean create = true;
+
+        for(int j = 0; j < markers.size(); j++)
+        {
+            if (markers.get(j).getSnippet().equals(snippetId))
+                create = false;
+        }
+
+        if(create)
+        {
+            MarkerOptions mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet(snippetId);
+            markers.add(mMap.addMarker(mOpts));
+        }
     }
 
     private void setMarkerPosition(LatLng pos, Marker marker)
@@ -304,27 +364,54 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         marker.setPosition(pos);
     }
 
-    private void setMarkerImage(String markerName, String imageType, LatLng ltlg)
+    private void startCountDown()
     {
-        MarkerOptions mOpts = new MarkerOptions();
+        new CountDownTimer(342000, 1000) {
 
-        if(imageType.equals("freestation"))
+            public void onTick(long millisUntilFinished) {
+                timer = 171 - (millisUntilFinished / 2000);
+            }
+
+            public void onFinish() {
+               Log.d("TIMER", "Timer done now!");
+            }
+        }.start();
+
+    }
+
+    private void setMarkerImage(String snippetId, String imageType)
+    {
+        Marker currMarker = null;
+
+        for(int i = 0; i < markers.size(); i++)
         {
-            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.free_station_gmap));
+            Marker marker = markers.get(i);
+
+            if(marker.getSnippet().equals(snippetId))
+            {
+                currMarker = marker;
+                break;
+            }
         }
-        else if(imageType.equals("owncar"))
-        {
-            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.own_car));
+
+        switch (imageType) {
+            case "freestation":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.free_station_gmap));
+                break;
+            case "owncar":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.own_car));
+                break;
+            case "reservedcar":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.reserved_car));
+                break;
+            case "occupiedstation":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.occupied_station));
+                break;
         }
-        else if(imageType.equals("reservedcar"))
-        {
-            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.reserved_car));
-        }
-        else if(imageType.equals("occupiedstation"))
-        {
-            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.occupied_station));
-        }
-        markers.add(mMap.addMarker(mOpts));
     }
 
 }
