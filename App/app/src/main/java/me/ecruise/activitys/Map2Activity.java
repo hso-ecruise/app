@@ -4,11 +4,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -18,13 +20,18 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
+import me.ecruise.data.Car;
+import me.ecruise.data.Customer;
+import me.ecruise.data.Map;
 import me.ecruise.data.ServerRequest;
+import me.ecruise.data.Station;
 
 
 public class Map2Activity extends AppCompatActivity implements OnMapReadyCallback{
 
     private GoogleMap mMap;
     private ArrayList<Marker> markers = new ArrayList<>();
+    private static final LatLng centralPos = new LatLng(49.487155, 8.466219);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,87 +41,252 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.mapFragment);
         mapFragment.getMapAsync(this);
+
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        actualizeMap();
+        CameraPosition cp = new CameraPosition.Builder().target(centralPos).zoom(13).build();
+        CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
+        mMap.moveCamera(cu);
+        if(Map.getInstance(this.getApplicationContext()).getShowStations())
+        {
+            Map.getInstance(this.getApplicationContext()).getStationsFromServer(new Customer.DataCallback() {
+                @Override
+                public void onSuccess() {
+                    showStationMarkers();
+                }
+                @Override
+                public void onFailure() {
+
+                }
+            });
+        }
+        if(Map.getInstance(this.getApplicationContext()).getShowAllCars())
+        {
+            Map.getInstance(this.getApplicationContext()).getCarsFromServer(new Customer.DataCallback() {
+                @Override
+                public void onSuccess() {
+                    showCarMarkers();
+                }
+                @Override
+                public void onFailure() {
+
+                }
+            });
+        }
+        if(Map.getInstance(this.getApplicationContext()).getShowBookedCar())
+        {
+            Map.getInstance(this.getApplicationContext()).getCarsFromServer(new Customer.DataCallback() {
+                @Override
+                public void onSuccess() {
+                    showBookedCarMarker();
+                }
+                @Override
+                public void onFailure() {
+
+                }
+            });
+        }
     }
 
-    private void initAllMarkers(JSONArray jArray)
-    {
-        JSONObject jObject;
-        LatLng cords;
-        try
-        {
-            for (int i = 0; i < jArray.length(); i++)
-            {
-                jObject = (JSONObject) jArray.get(i);
-                cords = new LatLng((Double) jObject.get("latitude"), (Double) jObject.get("longitude"));
-                Log.d("initAllMarkers", cords.toString());
-                createMarker(jObject.getInt("slots") + " Slots", cords);
+    private void showStationMarkers(){
+        ArrayList<Station> stations = Map.getInstance(this.getApplicationContext()).getStations();
+        for (Station station: stations) {
+            createMarker(station.getName(), station.getPos(), "Station " + Integer.toString(station.getId()));
+            if(station.isFree())
+                setMarkerImage("Station " + Integer.toString(station.getId()), "freestation");
+            else
+                setMarkerImage("Station " + Integer.toString(station.getId()), "occupiedstation");
+        }
+    }
 
-                if(jObject.getInt("slotsOccupuied") < jObject.getInt("slots"))
-                    setMarkerImage(jObject.getInt("slots") + " Slots", "freestation", cords);
-                else
-                    setMarkerImage(jObject.getInt("slots") + " Slots", "occupiedstation", cords);
+    private void showCarMarkers(){
+        ArrayList<Car> cars = Map.getInstance(this.getApplicationContext()).getCars();
+        for (Car car: cars) {
+            createMarker(car.getName(), car.getPos(), "Car " + Integer.toString(car.getId()));
+            setMarkerImage("Car " + Integer.toString(car.getId()), "charging" +  Integer.toString(car.getChargingLevel()));
+        }
+    }
+
+    private void showBookedCarMarker(){
+        int id = Map.getInstance(this.getApplicationContext()).getBookedCarId();
+        ArrayList<Car> cars = Map.getInstance(this.getApplicationContext()).getCars();
+        for (Car car: cars) {
+            if(id == car.getId())
+            {
+                createMarker(car.getName(), car.getPos(), "Car " + Integer.toString(car.getId()));
+                setMarkerImage("Car " + Integer.toString(car.getId()), "charging" +  Integer.toString(car.getChargingLevel()));
+            }
+
+        }
+    }
+
+    /**
+     *  This method create a marker on the GoogleMap
+     *
+     *  @param markerName given Marker Title
+     *  @param ltlg given Marker positionm
+     *  @param snippetId give Marker Snippet
+     **/
+    private void createMarker(String markerName, LatLng ltlg, String snippetId)
+    {
+        boolean create = true;
+
+        for(int j = 0; j < markers.size(); j++)
+        {
+            if (markers.get(j).getSnippet().equals(snippetId))
+                create = false;
+        }
+
+        if(create)
+        {
+            MarkerOptions mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet(snippetId);
+            markers.add(mMap.addMarker(mOpts));
+        }
+    }
+
+    /**
+     *  This method set the Marker Icon of a given marker Snippet ID
+     *
+     *  @param snippetId Marker id defined in the Snippet
+     *  @param imageType the image type, specified in the method
+     *
+     *  @return mapped charge level
+     **/
+    private void setMarkerImage(String snippetId, String imageType)
+    {
+        Marker currMarker = null;
+
+        for(int i = 0; i < markers.size(); i++)
+        {
+            Marker marker = markers.get(i);
+
+            if(marker.getSnippet().equals(snippetId))
+            {
+                currMarker = marker;
+                break;
             }
         }
-        catch(Exception e)
-        {
-            e.printStackTrace();
+        switch (imageType) {
+            case "freestation":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.free_station_gmap));
+                break;
+            case "owncar":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.own_car));
+                break;
+            case "reservedcar":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.reserved_car_2));
+                break;
+            case "occupiedstation":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.occupied_station));
+                break;
+            case "freecar":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.free_car));
+                break;
+            case "blockedcar":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.car_blocked));
+                break;
+            case "charging0":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_zero));
+                break;
+            case "charging25":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_25));
+                break;
+            case "charging50":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_50));
+                break;
+            case "charging75":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_75));
+                break;
+            case "charging100":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_100));
+                break;
+
         }
     }
 
-    private void actualizeMap()
-    {
-        ServerRequest sr = new ServerRequest(this.getApplicationContext());
-        sr.generateJsonArray("https://api.ecruise.me/v1/charging-stations",
-                new ServerRequest.VolleyCallbackArray()
-                {
-                    @Override
-                    public void onSuccess(JSONArray result)
-                    {
-                        try
-                        {
-                            JSONArray jArray = result;
-                            initAllMarkers(jArray);
-                        }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-    }
+//    private void initAllMarkers(JSONArray jArray)
+//    {
+//        JSONObject jObject;
+//        LatLng cords;
+//        try
+//        {
+//            for (int i = 0; i < jArray.length(); i++)
+//            {
+//                jObject = (JSONObject) jArray.get(i);
+//                cords = new LatLng((Double) jObject.get("latitude"), (Double) jObject.get("longitude"));
+//                Log.d("initAllMarkers", cords.toString());
+//                createMarker(jObject.getInt("slots") + " Slots", cords);
+//
+//                if(jObject.getInt("slotsOccupuied") < jObject.getInt("slots"))
+//                    setMarkerImage(jObject.getInt("slots") + " Slots", "freestation", cords);
+//                else
+//                    setMarkerImage(jObject.getInt("slots") + " Slots", "occupiedstation", cords);
+//            }
+//        }
+//        catch(Exception e)
+//        {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    private void actualizeMap()
+//    {
+//        ServerRequest sr = new ServerRequest(this.getApplicationContext());
+//        sr.generateJsonArray("https://api.ecruise.me/v1/charging-stations",
+//                new ServerRequest.VolleyCallbackArray()
+//                {
+//                    @Override
+//                    public void onSuccess(JSONArray result)
+//                    {
+//                        try
+//                        {
+//                            JSONArray jArray = result;
+//                            initAllMarkers(jArray);
+//                        }
+//                        catch (Exception e)
+//                        {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                });
+//    }
 
-    public void createMarker(String markerName, LatLng ltlg)
-    {
-        MarkerOptions mOpts = new MarkerOptions().position(ltlg).title(markerName);
-        markers.add(mMap.addMarker(mOpts));
-    }
 
-    public void setMarkerImage(String markerName, String imageType, LatLng ltlg)
-    {
-        MarkerOptions mOpts = new MarkerOptions();
 
-        if(imageType.equals("freestation"))
-        {
-            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.free_station));
-        }
-        /*ielse if(imageType.equals("owncar"))
-        {
-            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.own_car));
-        }
-        else if(imageType.equals("reservedcar"))
-        {
-            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.reserved_car));
-        }
-        else if(imageType.equals("occupiedstation"))
-        {
-            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.occupied_station));
-        }*/
-        markers.add(mMap.addMarker(mOpts));
-    }
+//    public void setMarkerImage(String markerName, String imageType, LatLng ltlg)
+//    {
+//        MarkerOptions mOpts = new MarkerOptions();
+//
+//        if(imageType.equals("freestation"))
+//        {
+//            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.free_station));
+//        }
+//        /*ielse if(imageType.equals("owncar"))
+//        {
+//            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.own_car));
+//        }
+//        else if(imageType.equals("reservedcar"))
+//        {
+//            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.reserved_car));
+//        }
+//        else if(imageType.equals("occupiedstation"))
+//        {
+//            mOpts = new MarkerOptions().position(ltlg).title(markerName).snippet("Customized Marker").icon(BitmapDescriptorFactory.fromResource(R.mipmap.occupied_station));
+//        }*/
+//        markers.add(mMap.addMarker(mOpts));
+//    }
 }

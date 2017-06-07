@@ -66,6 +66,13 @@ public class Booking extends Button {
         super(context);
     }
 
+    /**
+     *
+     * @param context
+     * @param ID
+     * @param carID
+     * @param plannedDateString
+     */
     public Booking(Context context, int ID, int carID, String plannedDateString) {
         super(context);
         this.ID = ID;
