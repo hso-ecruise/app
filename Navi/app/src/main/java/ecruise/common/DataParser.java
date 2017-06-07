@@ -12,7 +12,12 @@ import java.util.List;
 
 public class DataParser {
 
-    /** Receives a JSONObject and returns a list of lists containing latitude and longitude */
+    /** Receives a JSONObject and returns a list of lists containing latitude and longitude
+     *
+     * @param jObject recevied Json Object to get all route points
+     *
+     * @return list of created objects
+     * */
     public List<List<HashMap<String,String>>> parse(JSONObject jObject){
 
         List<List<HashMap<String, String>>> routes = new ArrayList<>() ;
@@ -63,7 +68,10 @@ public class DataParser {
 
     /**
      * Method to decode polyline points
-     * Courtesy : https://jeffreysambells.com/2010/05/27/decoding-polylines-from-google-maps-direction-api-with-java
+     *
+     * @param encoded encoded polyline string
+     *
+     * @return List of coordinates required for route
      * */
     private List<LatLng> decodePoly(String encoded) {
 
