@@ -31,6 +31,14 @@ public class ServerRequest
 
     private Context mCtx;
 
+    /**
+     *  This method call server for a json object
+     *
+     *  @param url given Url to call
+     *  @param callback the callback object, given to the activity
+     *
+     *  @return json object
+     **/
     public void generateJsonObject(String url, VolleyCallbackObject callback)
     {
         final VolleyCallbackObject mCallback = callback;
@@ -65,6 +73,14 @@ public class ServerRequest
     }
 
 
+    /**
+     *  This method call server for a json Array object
+     *
+     *  @param url given Url to call
+     *  @param callback the callback object, given to the activity
+     *
+     *  @return json Array object
+     **/
     public void generateJsonArray(String url, VolleyCallbackArray callback)
     {
         final VolleyCallbackArray mCallback = callback;

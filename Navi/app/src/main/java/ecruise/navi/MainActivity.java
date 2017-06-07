@@ -39,7 +39,9 @@ import ecruise.common.ServerRequest;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback
 {
-    // Fetches data from url passed
+    /**
+     *  This class represents Url Fetching class. It calls the urls and passes data to next class
+     **/
     private class FetchUrl extends AsyncTask<String, Void, String> {
 
         @Override
@@ -65,6 +67,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // Invokes the thread for parsing the JSON data
             parserTask.execute(result);
         }
+        /*
+         *  This method dowloads the give URL and transform recieved data to string.
+         *
+         *  @param strUrl URL in string format
+         *
+         *  @return Data from url transformed into string
+         */
         private String downloadUrl(String strUrl) throws IOException
         {
             String data = "";
@@ -109,6 +118,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    /**
+    *  This class represents Parsing class. It parses data from Url and exceutes polyline drawing.
+    **/
     private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
 
         // Parsing the data in non-ui thread
@@ -218,14 +230,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap = googleMap;
     }
 
+    /**
+     *  This executes on "Zentrieren" button click and actulize the map
+     **/
     private void centerMarker()
     {
-        actualizeMap();
+        requestServer();
         drawRoute();
         moveCar();
     }
 
-
+    /**
+     *  This method simulate car moving over the route. Internal timer is used to simulate the route moving.
+     **/
     private void moveCar()
     {
         Long value = timer;
@@ -260,11 +277,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             mMap.moveCamera(cu);
             counterForRoute++;
         }
-        else
+        else if(counterForRoute == myRoute.size() && myRoute.size() > 0)
         {
-            Log.d("moveCar()", "---------------SOMETHING WENT WRONG. DATA HERE = " + counterForRoute + ", " +  myRoute.size());
+            Log.d("moveCar()", "------------------DRAWING CAR----------------");
+            LatLng currPos = myRoute.get(counterForRoute - 1);
+            createMarker("My car", currPos, "TrueCarId");
+            setMarkerImage("TrueCarId", "owncar");
+            setMarkerPosition(currPos, getMarkerOnSnippet("TrueCarId"));
+            CameraPosition cp = new CameraPosition.Builder().target(currPos).zoom(16).build();
+            CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
+            mMap.moveCamera(cu);
         }
+        else
+            Log.d("moveCar()", "---------------SOMETHING WENT WRONG. DATA HERE = " + counterForRoute + ", " +  myRoute.size());
     }
+
+    /**
+     *  This method get Marker on its snippet name
+     *
+     *  @param snippet Snippet name as string
+     *
+     *  @return Marker object
+     **/
     private Marker getMarkerOnSnippet(String snippet)
     {
         for(int i = 0; i < markers.size(); i++)
@@ -276,7 +310,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return null;
     }
 
-    private void initAllMarkers(JSONArray jArray)
+
+    /**
+     *  This method initialize all Stations received from backend server
+     *
+     *  @param jArray Json Array containing all station objects
+     **/
+    private void initAllStations(JSONArray jArray)
     {
         JSONObject jObject;
         LatLng cords;
@@ -287,7 +327,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             {
                 jObject = (JSONObject) jArray.get(i);
                 cords = new LatLng((Double) jObject.get("latitude"), (Double) jObject.get("longitude"));
-                Log.d("initAllMarkers", cords.toString());
+                Log.d("initAllStations()", cords.toString());
 
                 createMarker(jObject.getInt("slots") + " Slots", cords, String.valueOf(jObject.getInt("chargingStationId")));
 
@@ -302,7 +342,69 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
         }
     }
-    private void actualizeMap()
+
+
+    /**
+    *  This method initialize all Cars received from backend server
+    *
+    *  @param jArray Json Array containing all car objects
+    **/
+    private void initAllCars(JSONArray jArray)
+    {
+        JSONObject jObject;
+        LatLng cords;
+
+        try
+        {
+            for (int i = 0; i < jArray.length(); i++)
+            {
+                jObject = (JSONObject) jArray.get(i);
+                cords = new LatLng((Double) jObject.get("lastKnownPositionLatitude"), (Double) jObject.get("lastKnownPositionLongitude"));
+                Log.d("initAllCars()", cords.toString());
+
+                if(jObject.getInt("chargingState") != 1)
+                    createMarker(jObject.getString("model"), cords, String.valueOf(jObject.getInt("carId")));
+
+                if(jObject.getInt("chargingState") == 2)
+                {
+                    switch(getChargeLevel(jObject.getInt("chargeLevel"))) {
+                        case 1:
+                            setMarkerImage(String.valueOf(jObject.getInt("carId")), "charging0");
+                            break;
+                        case 2:
+                            setMarkerImage(String.valueOf(jObject.getInt("carId")), "charging25");
+                            break;
+                        case 3:
+                            setMarkerImage(String.valueOf(jObject.getInt("carId")), "charging50");
+                            break;
+                        case 4:
+                            setMarkerImage(String.valueOf(jObject.getInt("carId")), "charging75");
+                            break;
+                        case 5:
+                            setMarkerImage(String.valueOf(jObject.getInt("carId")), "charging100");
+                            break;
+                    }
+                }
+                else if(jObject.getInt("chargingState") == 3 && jObject.getInt("bookingState") == 1)
+                    setMarkerImage(String.valueOf(jObject.getInt("carId")), "freecar");
+                else if(jObject.getInt("chargingState") == 3 && jObject.getInt("bookingState") == 2)
+                    setMarkerImage(String.valueOf(jObject.getInt("carId")), "reservedcar");
+                else if(jObject.getInt("chargingState") == 3 && jObject.getInt("bookingState") == 3)
+                    setMarkerImage(String.valueOf(jObject.getInt("carId")), "reservedcar");
+            }
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    /**
+    *  This method create Requests to server on the specified URL
+    **/
+    private void requestServer()
     {
         ServerRequest sr = new ServerRequest(this.getApplicationContext());
         sr.generateJsonArray("https://api.ecruise.me/v1/charging-stations",
@@ -313,7 +415,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     {
                         try
                         {
-                            initAllMarkers(result);
+                            initAllStations(result);
+                        }
+                        catch (Exception e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+        ServerRequest sr2 = new ServerRequest(this.getApplicationContext());
+        sr2.generateJsonArray("https://api.ecruise.me/v1/cars",
+                new ServerRequest.VolleyCallbackArray()
+                {
+                    @Override
+                    public void onSuccess(JSONArray result)
+                    {
+                        try
+                        {
+                            initAllCars(result);
                         }
                         catch (Exception e)
                         {
@@ -323,11 +443,50 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 });
     }
 
+    /**
+    *  This method map charging states of a car to 1-5 depending on chargelevel
+    *
+    *  @param chargeLevel this param represents exact chargeLevel of a car
+    *
+    *  @return mapped charge level
+    **/
+    private int getChargeLevel(int chargeLevel)
+    {
+        if(chargeLevel <= 25)
+            return 1;
+        if(chargeLevel > 25 && chargeLevel <= 50)
+            return 2;
+        if(chargeLevel > 50 && chargeLevel <= 75)
+            return 3;
+        if(chargeLevel > 75 && chargeLevel < 100)
+            return 4;
+        if(chargeLevel >= 100)
+            return 5;
+
+        return -1;
+    }
+
+
+    /**
+    *  This method construct the Route URL for Google Directions API depending on given parameters
+    *
+    *  @param orig represents original car position
+    *
+    *  @param dest represents destination of the car
+    *
+    *  @return constructed URL
+    **/
     private String getUrl(LatLng orig, LatLng dest)
     {
         return "https://maps.googleapis.com/maps/api/directions/json?origin=" + orig.latitude + ","  + orig.longitude  + "&destination="+ dest.latitude + "," + dest.longitude + "&sensor=false&units=metric&mode=driving&key=AIzaSyCJ32t4b_NZ1MY_dDW6XKf5hYLLZOddRVQ";
     }
 
+
+    /**
+    *  This method draw a route for simulated driving
+    *
+    *  @return true on success, else false
+    **/
     private boolean drawRoute()
     {
         LatLng origin = new LatLng(49.485000, 8.468000);
@@ -342,6 +501,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return true;
     }
 
+
+    /**
+    *  This method create a marker on the GoogleMap
+    *
+    *  @param markerName given Marker Title
+    *  @param ltlg given Marker positionm
+    *  @param snippetId give Marker Snippet
+    **/
     private void createMarker(String markerName, LatLng ltlg, String snippetId)
     {
         boolean create = true;
@@ -359,11 +526,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+
+    /**
+    *  This method set the Marker position
+    *
+    *  @param pos new Position of the given marker
+    *  @param marker the marker, which position should be changed
+    *
+    **/
     private void setMarkerPosition(LatLng pos, Marker marker)
     {
         marker.setPosition(pos);
     }
 
+
+    /**
+    *  This method starting internal countdown for simulation
+    **/
     private void startCountDown()
     {
         new CountDownTimer(342000, 1000) {
@@ -376,9 +555,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                Log.d("TIMER", "Timer done now!");
             }
         }.start();
-
     }
 
+
+    /**
+    *  This method set the Marker Icon of a given marker Snippet ID
+    *
+    *  @param snippetId Marker id defined in the Snippet
+    *  @param imageType the image type, specified in the method
+    *
+    *  @return mapped charge level
+    **/
     private void setMarkerImage(String snippetId, String imageType)
     {
         Marker currMarker = null;
@@ -393,7 +580,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 break;
             }
         }
-
         switch (imageType) {
             case "freestation":
                 assert currMarker != null;
@@ -405,12 +591,41 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 break;
             case "reservedcar":
                 assert currMarker != null;
-                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.reserved_car));
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.reserved_car_2));
                 break;
             case "occupiedstation":
                 assert currMarker != null;
                 currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.occupied_station));
                 break;
+            case "freecar":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.free_car));
+                break;
+            case "blockedcar":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.car_blocked));
+                break;
+            case "charging0":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_zero));
+                break;
+            case "charging25":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_25));
+                break;
+            case "charging50":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_50));
+                break;
+            case "charging75":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_75));
+                break;
+            case "charging100":
+                assert currMarker != null;
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_100));
+                break;
+
         }
     }
 
