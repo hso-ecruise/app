@@ -44,6 +44,11 @@ public class Customer {
         mCtx = context;
     }
 
+    /**
+     *
+     * @param context
+     * @return
+     */
     public static synchronized Customer getInstance(Context context) {
         if (mInstance == null && context != null) {
             mInstance = new Customer(context);
@@ -152,6 +157,11 @@ public class Customer {
     private boolean cityChanged = false;
     private boolean countryChanged = false;
 
+    /**
+     *
+     * @param newCustomer
+     * @return
+     */
     public boolean checkForChanges(Customer newCustomer) {
         nameChanged = !newCustomer.name.isEmpty() && !this.name.equals(newCustomer.name);
         lastnameChanged = !newCustomer.lastname.isEmpty() && !this.lastname.equals(newCustomer.lastname);
@@ -178,6 +188,10 @@ public class Customer {
                 countryChanged);
     }
 
+    /**
+     *
+     * @param callback
+     */
     public void getUserDataFromServer(DataCallback callback) {
         final DataCallback mCallback = callback;
         final String mToken = Customer.getInstance(mCtx).getToken();
@@ -208,6 +222,10 @@ public class Customer {
         Server.getInstance(mCtx).addToRequestQueue(jsObjRequest);
     }
 
+    /**
+     *
+     * @param response
+     */
     public void setUserData(JSONObject response) {
         try {
             this.setCity(response.getString("city"));
@@ -294,6 +312,12 @@ public class Customer {
         Log.d("RETURN", Boolean.toString(updated));
     }
 
+    /**
+     *
+     * @param url
+     * @param data
+     * @param callback
+     */
     public void patchString(String url, String data, final DataAnswerCallback callback) {
         final DataAnswerCallback mCallback = callback;
         final String mToken = Customer.getInstance(mCtx).getToken();
@@ -339,6 +363,12 @@ public class Customer {
         Server.getInstance(mCtx).addToRequestQueue(jsObjRequest);
     }
 
+    /**
+     *
+     * @param url
+     * @param data
+     * @param callback
+     */
     public void patchJSON(String url, JSONObject data, DataAnswerCallback callback) {
         final DataAnswerCallback mCallback = callback;
         final String mToken = Customer.getInstance(mCtx).getToken();
@@ -382,6 +412,10 @@ public class Customer {
         Server.getInstance(mCtx).addToRequestQueue(jsObjRequest);
     }
 
+    /**
+     *
+     * @param callback
+     */
     public void registerUser(DataCallback callback) {
         final DataCallback mCallback = callback;
         final String mToken = Customer.getInstance(mCtx).getToken();
@@ -428,6 +462,9 @@ public class Customer {
         Server.getInstance(mCtx).addToRequestQueue(jsObjRequest);
     }
 
+    /**
+     *
+     */
     public void logout() {
         Intent intent = new Intent(mCtx, LoginActivity.class);
         mCtx.startActivity(intent);
