@@ -7,6 +7,9 @@ import ecruise.data.Server;
 /**
  * Created by Tom on 21.03.2017.
  */
+
+// This class is a mapping for BookingState and ChargingState to the StatusLED
+// The StatusLED communicates with the Server
 public class StatusLED
 {
     public CarState calculateCarState()

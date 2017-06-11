@@ -22,12 +22,13 @@ import java.util.concurrent.ConcurrentSkipListMap;
 /**
  * Created by Tom on 28.03.2017.
  */
+// the interface to the api.ecruise.me
 public class ServerConnection implements IServerConnection
 {
     private static final String CAR_ID = "0";
     BookingState bookingState = null;
     ChargingState chargingState = null;
-    String chipCardUid = null;
+    String chipCardUid = null; // if the car is booked, this will be the unique chipCardUid of the customer
 
     private RequestQueue mRequestQueue;
     private static Context mCtx;
@@ -38,6 +39,7 @@ public class ServerConnection implements IServerConnection
         mRequestQueue = getRequestQueue();
 
 
+        // A copy of the relevant servers values is polled every 10 s
         Thread thread = new Thread(new Runnable()
         {
             @Override
@@ -45,6 +47,7 @@ public class ServerConnection implements IServerConnection
             {
                 while (true)
                 {
+                    // the update methods do the polling asynchronously
                     updateBookingState();
                     updateChargingState();
                     updateChipCardUid();
@@ -254,7 +257,8 @@ public class ServerConnection implements IServerConnection
                         catch (JSONException e)
                         {
                             e.printStackTrace();
-                        } catch (ParseException e)
+                        }
+                        catch (ParseException e)
                         {
                             e.printStackTrace();
                         }

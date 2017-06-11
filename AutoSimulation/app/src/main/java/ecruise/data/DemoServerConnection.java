@@ -4,6 +4,7 @@ package ecruise.data;
  * @author Tom
  * @since 04.06.2017.
  */
+// for testing purposes
 public class DemoServerConnection implements IServerConnection
 {
 

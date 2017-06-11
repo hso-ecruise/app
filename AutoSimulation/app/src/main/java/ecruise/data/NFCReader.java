@@ -82,6 +82,8 @@ public class NFCReader implements IScanDevice
         return false;
     }
 
+    // this method checks if the the device is now going to the chip
+    // and is will store the intent, which is needed for scanning
     public boolean isReady(Intent intent)
     {
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction()) ||

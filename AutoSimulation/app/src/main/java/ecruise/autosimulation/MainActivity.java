@@ -27,6 +27,7 @@ public class MainActivity extends AppCompatActivity
 
     private Timer statusTimer = new Timer();
 
+    // polls the color of the status LED
     public Handler updateHandler = new Handler()
     {
         public void handleMessage(Message msg)
@@ -38,6 +39,7 @@ public class MainActivity extends AppCompatActivity
 
     public MainActivity()
     {
+        // output of the logger goes to a textview in this activity
         Logger.getInstance().addListener(new ILogListener()
         {
             @Override
@@ -68,7 +70,10 @@ public class MainActivity extends AppCompatActivity
         try
         {
             nfcReader = new NFCReader(getApplicationContext());
-        } catch (Exception e)
+        }
+        // if there is no NFC-Reader present on the device, a inputText for manual typing of
+        // the ID is provided
+        catch (Exception e)
         {
             nfcReader = new DemoNFCReader();
             LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutFallback);
@@ -115,26 +120,30 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    // is needed for real NFC-Reader to work
     protected void onResume()
     {
         super.onResume();
         try
         {
             ((NFCReader) nfcReader).onResume(this);
-        } catch (ClassCastException e)
+        }
+        catch (ClassCastException e)
         {
 
         }
     }
 
     @Override
+    // is needed for real NFC-Reader to work
     protected void onPause()
     {
         super.onPause();
         try
         {
             ((NFCReader) nfcReader).onPause(this);
-        } catch (ClassCastException e)
+        }
+        catch (ClassCastException e)
         {
 
         }
@@ -155,10 +164,10 @@ public class MainActivity extends AppCompatActivity
                 {
                     setStatusColorCode(ColorCode.OFF);
                     setStatusText(getResources().getString(R.string.discarging));
-
                 }
             }
-        } catch (ClassCastException e)
+        }
+        catch (ClassCastException e)
         {
 
         }
