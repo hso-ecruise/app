@@ -35,7 +35,7 @@ import me.ecruise.data.Server;
 public class MainActivity extends AppCompatActivity implements OnMenuItemClickListener {
 
     /**
-     *
+     * initializes the activity
      * @param savedInstanceState
      */
     @Override
@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
-     *
+     * starts a new AccountManagementActivity
      */
     private void startAccountManagement() {
         Intent intent = new Intent(this, AccountManagementActivity.class);
@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
-     *
+     * starts a new standard MapActivity
      */
     private void startMap() {
         Intent intent = new Intent(this, Map2Activity.class);
@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
-     *
+     * starts a new MapActivity which shows the booked car
      * @param booking
      */
     private void startBookedCarMap(Booking booking) {
@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
-     *
+     * starts a new bookingActivity
      */
     private void startNewBooking() {
         Intent intent = new Intent(this, BookingActivity.class);
@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
-     *
+     * shows a popup
      * @param v
      */
     public void showPopup(View v) {
@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
-     *
+     * gets bookings from the server
      */
     public void getBookingsFromServer() {
         final String mToken = Customer.getInstance(this.getApplicationContext()).getToken();
@@ -175,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
-     *
+     * shows all bookings in a linear layout
      * @param bookings
      */
     public void showBookings(JSONArray bookings) {

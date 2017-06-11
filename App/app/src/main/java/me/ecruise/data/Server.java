@@ -48,13 +48,17 @@ public class Server
     }
 
     public static synchronized Server getInstance(Context context) {
-        if (mInstance == null) {
+        if (mInstance == null && context != null) {
             mInstance = new Server(context);
         }
         return mInstance;
     }
 
-    public RequestQueue getRequestQueue() {
+    /**
+     *
+     * @return returns the RequestQueue
+     */
+    private RequestQueue getRequestQueue() {
         if (mRequestQueue == null) {
             // getApplicationContext() is key, it keeps you from leaking the
             // Activity or BroadcastReceiver if someone passes one in.
@@ -63,6 +67,11 @@ public class Server
         return mRequestQueue;
     }
 
+    /**
+     * function to add a request to the queue
+     * @param req Request to add
+     * @param <T> Type of the request to add
+     */
     public <T> void addToRequestQueue(Request<T> req) {
         getRequestQueue().add(req);
     }

@@ -29,6 +29,10 @@ public class RegistrationActivity extends AppCompatActivity {
     private EditText mHousenumber;
     private EditText mExtraAddressline;
 
+    /**
+     * initializes the activity
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +65,9 @@ public class RegistrationActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Creates a new Customer with the User-Input and posts it to the server
+     */
     public void confirm() {
         if (validateTextEdits()) {
             Customer.getInstance(this.getApplicationContext()).setName(mNameText.getText().toString());
@@ -91,6 +98,9 @@ public class RegistrationActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Creates a positiv Info-Alert
+     */
     private void successAlert() {
         Log.d("Alert", "Success");
         AlertDialog.Builder dlgAlert = new AlertDialog.Builder(this);
@@ -105,6 +115,9 @@ public class RegistrationActivity extends AppCompatActivity {
         dlgAlert.create().show();
     }
 
+    /**
+     * Creates an Error-Alert
+     */
     private void failureAlert() {
         Log.d("Alert", "Failure");
         AlertDialog.Builder dlgAlert = new AlertDialog.Builder(this);
@@ -120,6 +133,11 @@ public class RegistrationActivity extends AppCompatActivity {
         dlgAlert.create().show();
     }
 
+    /**
+     * checks if the user-input is valid
+     * also sets error-infos for the user
+     * @return true if everything is ok
+     */
     public boolean validateTextEdits() {
         if (mNameText.getText().toString().isEmpty()) {
             mNameText.setError("Pflichtfeld");

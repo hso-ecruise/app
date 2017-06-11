@@ -44,9 +44,6 @@ import java.util.TimeZone;
 import me.ecruise.data.Customer;
 import me.ecruise.data.Server;
 
-/**
- *
- */
 public class BookingActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
@@ -54,7 +51,7 @@ public class BookingActivity extends AppCompatActivity implements
     private Calendar mPlannedDate;
 
     /**
-     *
+     * Initializes the Activity
      * @param savedInstanceState
      */
     @Override
@@ -155,8 +152,8 @@ public class BookingActivity extends AppCompatActivity implements
     }
 
     /**
-     *
-     * @return
+     * Validates the selected Date and Time
+     * @return true if the date is at least 30min in the future
      */
     private boolean validateSelectedDateAndTime() {
         Calendar testTime = Calendar.getInstance();
@@ -167,43 +164,31 @@ public class BookingActivity extends AppCompatActivity implements
     }
 
     /**
-     *
+     * Starts a new Map Activity where the location can be chosen
      */
     private void startMap() {
         Intent intent = new Intent(this, Map2Activity.class);
         startActivity(intent);
     }
 
-    /**
-     *
-     * @param bundle
-     */
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Log.d("Google", "connected");
         autoPosBooking();
     }
 
-    /**
-     *
-     * @param i
-     */
     @Override
     public void onConnectionSuspended(int i) {
 
     }
 
-    /**
-     *
-     * @param connectionResult
-     */
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
     }
 
     /**
-     *
+     * Creates an info-alert
      */
     private void successAlert() {
         Log.d("Alert", "Success");
@@ -220,7 +205,7 @@ public class BookingActivity extends AppCompatActivity implements
     }
 
     /**
-     *
+     * Creates a failure Alert
      */
     private void failureAlert() {
         Log.d("Alert", "Failure");
@@ -238,7 +223,7 @@ public class BookingActivity extends AppCompatActivity implements
     }
 
     /**
-     *
+     * determines the position for the booking with the location of the smartphone
      */
     private void autoPosBooking() {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -260,9 +245,9 @@ public class BookingActivity extends AppCompatActivity implements
     }
 
     /**
-     *
-     * @param lat
-     * @param lng
+     * posts a booking to the server
+     * @param lat latitude of the booked position
+     * @param lng longitude of the booked position
      */
     private void postBooking(double lat, double lng) {
         final String mToken = Customer.getInstance(this.getApplicationContext()).getToken();

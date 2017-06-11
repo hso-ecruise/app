@@ -64,19 +64,19 @@ public class Car {
     }
 
     /**
-     *
+     * sets the charging level and converts it to a value that fits to the icons
      * @param chargingLevel
      */
     public void setChargingLevel(int chargingLevel) {
         if(chargingLevel < 25)
             this.chargingLevel = 0;
-        if(chargingLevel >= 25 && chargingLevel < 50)
+        else if(chargingLevel < 50)
             this.chargingLevel = 25;
-        if(chargingLevel >= 50 && chargingLevel < 75)
+        else if(chargingLevel < 75)
             this.chargingLevel = 50;
-        if(chargingLevel >= 75 && chargingLevel < 100)
+        else if(chargingLevel < 100)
             this.chargingLevel = 75;
-        if(chargingLevel == 100)
+        else
             this.chargingLevel = 100;
     }
 

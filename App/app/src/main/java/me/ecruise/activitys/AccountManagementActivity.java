@@ -14,9 +14,6 @@ import android.widget.TabHost;
 
 import me.ecruise.data.Customer;
 
-/**
- *
- */
 public class AccountManagementActivity extends AppCompatActivity{
 
     LinearLayout login;
@@ -37,14 +34,11 @@ public class AccountManagementActivity extends AppCompatActivity{
     private EditText mCityText;
     private EditText mCountryText;
 
-    /**
-     *
-     */
     public AccountManagementActivity(){
     }
 
     /**
-     *
+     * Methon for initialisation
      * @param savedInstanceState
      */
     @Override
@@ -136,7 +130,7 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
+     *  Called when the confirm button is pressed
      */
     private void confirm(){
         if (validateTextEdits())
@@ -157,8 +151,9 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
-     * @return
+     * checks if the user-input is valid
+     * also sets error-infos for the user
+     * @return true if everything is ok
      */
     public boolean validateTextEdits()
     {
@@ -196,7 +191,7 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
+     * communicates with the Customer Object to update the data
      * @param newCustomerData
      */
     private void patchUserData(Customer newCustomerData) {
@@ -213,7 +208,8 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
+     * Creates a positiv Info-Alert
+     * @param answer the Answer from the Servercall, contains the name of the changed field
      */
     private void successAlert(String answer)
     {
@@ -240,7 +236,7 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
+     * Creates an error Alert
      */
     private void failureAlert()
     {
@@ -259,8 +255,8 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
-     * @return
+     * Reads the Data from the User-Input and stores it in an Costumer Object
+     * @return the new Customer
      */
     private Customer readUserData(){
         Customer customer = new Customer(this.getApplicationContext());
@@ -279,7 +275,8 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
+     * Initializes the Text in the input fields.
+     * Uses the Instance of the Singleton Customer
      */
     private void initializeTextEdits(){
         mNameText.setText(Customer.getInstance(this.getApplicationContext()).getName());
