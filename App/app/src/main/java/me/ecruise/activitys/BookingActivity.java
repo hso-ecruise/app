@@ -44,6 +44,9 @@ import java.util.TimeZone;
 import me.ecruise.data.Customer;
 import me.ecruise.data.Server;
 
+/**
+ *
+ */
 public class BookingActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 

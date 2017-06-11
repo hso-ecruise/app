@@ -34,6 +34,10 @@ import me.ecruise.data.Server;
 
 public class MainActivity extends AppCompatActivity implements OnMenuItemClickListener {
 
+    /**
+     *
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,21 +65,47 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         getBookingsFromServer();
     }
 
+    /**
+     *
+     */
     private void startAccountManagement() {
         Intent intent = new Intent(this, AccountManagementActivity.class);
         startActivity(intent);
     }
 
+    /**
+     *
+     */
     private void startMap() {
         Intent intent = new Intent(this, Map2Activity.class);
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowStations(true);
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowAllCars(true);
         startActivity(intent);
     }
 
+    /**
+     *
+     * @param booking
+     */
+    private void startBookedCarMap(Booking booking) {
+
+        Intent intent = new Intent(this, Map2Activity.class);
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowBookedCar(true);
+        startActivity(intent);
+    }
+
+    /**
+     *
+     */
     private void startNewBooking() {
         Intent intent = new Intent(this, BookingActivity.class);
         startActivity(intent);
     }
 
+    /**
+     *
+     * @param v
+     */
     public void showPopup(View v) {
         PopupMenu popup = new PopupMenu(this, v);
         popup.setOnMenuItemClickListener(this);
@@ -85,6 +115,11 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         popup.show();
     }
 
+    /**
+     *
+     * @param item
+     * @return
+     */
     @Override
     public boolean onMenuItemClick(MenuItem item) {
         // Handle item selection
@@ -103,6 +138,9 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         }
     }
 
+    /**
+     *
+     */
     public void getBookingsFromServer() {
         final String mToken = Customer.getInstance(this.getApplicationContext()).getToken();
         String url = "https://api.ecruise.me/v1/bookings/by-customer/" + Customer.getInstance(this.getApplicationContext()).getId();
@@ -136,17 +174,22 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         Server.getInstance(this.getApplicationContext()).addToRequestQueue(jsonArrayRequest);
     }
 
+    /**
+     *
+     * @param bookings
+     */
     public void showBookings(JSONArray bookings) {
         LinearLayout ll = (LinearLayout) findViewById(R.id.bookings);
         LinearLayoutCompat.LayoutParams lp = new LinearLayoutCompat.LayoutParams(LinearLayoutCompat.LayoutParams.MATCH_PARENT, LinearLayoutCompat.LayoutParams.WRAP_CONTENT);
         for (int i = 0; i < bookings.length(); i++) {
-            Booking bookingButton;
+            final Booking bookingButton;
             try {
                 bookingButton = new Booking(this.getApplicationContext(), bookings.getJSONObject(i).getInt("bookingId"), 0, bookings.getJSONObject(i).getString("plannedDate"));
                 ll.addView(bookingButton, lp);
                 bookingButton.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
-                        startMap();
+
+                        startBookedCarMap(bookingButton);
                     }
                 });
             } catch (JSONException e) {
