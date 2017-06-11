@@ -50,13 +50,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // For storing data from web service
             String data = "";
 
-            try {
+            try
+            {
                 // Fetching the data from web service
                 data = downloadUrl(url[0]);
                 Log.d("Background Task data", data);
             } catch (Exception e) {
                 Log.d("Background Task", e.toString());
             }
+
             return data;
         }
 
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
             ParserTask parserTask = new ParserTask();
+
             // Invokes the thread for parsing the JSON data
             parserTask.execute(result);
         }
@@ -130,7 +133,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             JSONObject jObject;
             List<List<HashMap<String, String>>> routes = null;
 
-            try {
+            try
+            {
                 jObject = new JSONObject(jsonData[0]);
                 Log.d("ParserTask", jsonData[0]);
                 DataParser parser = new DataParser();
@@ -141,10 +145,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d("ParserTask","Executing routes");
                 Log.d("ParserTask",routes.toString());
 
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 Log.d("ParserTask",e.toString());
                 e.printStackTrace();
             }
+
             return routes;
         }
 
@@ -191,7 +198,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d("onPostExecute()","adding PolyLine to map!!");
                 mMap.addPolyline(lineOptions);
             }
-            else {
+            else
+                {
                 Log.d("onPostExecute()","without Polylines drawn");
             }
         }
@@ -231,13 +239,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     /**
-     *  This executes on "Zentrieren" button click and actulize the map
+     *  This executes on "Zentrieren" button click and actulize the map with
+     *  data received from server. Also car simulation will be executed.
      **/
     private void centerMarker()
     {
         requestServer();
+
         drawRoute();
+
         moveCar();
+
     }
 
     /**
@@ -288,8 +300,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
             mMap.moveCamera(cu);
         }
-        else
-            Log.d("moveCar()", "---------------SOMETHING WENT WRONG. DATA HERE = " + counterForRoute + ", " +  myRoute.size());
+        else {
+            Log.d("moveCar()", "---------------SOMETHING WENT WRONG. DATA HERE = " + counterForRoute + ", " + myRoute.size());
+        }
     }
 
     /**
@@ -326,15 +339,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             for (int i = 0; i < jArray.length(); i++)
             {
                 jObject = (JSONObject) jArray.get(i);
+                String stationId = "Station" + String.valueOf(jObject.getInt("chargingStationId"));
                 cords = new LatLng((Double) jObject.get("latitude"), (Double) jObject.get("longitude"));
                 Log.d("initAllStations()", cords.toString());
 
-                createMarker(jObject.getInt("slots") + " Slots", cords, String.valueOf(jObject.getInt("chargingStationId")));
+                createMarker(jObject.getInt("slots") + " Slots", cords, stationId);
 
                 if(jObject.getInt("slotsOccupied") < jObject.getInt("slots"))
-                    setMarkerImage(String.valueOf(jObject.getInt("chargingStationId")), "freestation");
+                    setMarkerImage(stationId, "freestation");
                 else
-                    setMarkerImage(String.valueOf(jObject.getInt("chargingStationId")), "occupiedstation");
+                    setMarkerImage(stationId, "occupiedstation");
             }
         }
         catch(Exception e)
@@ -359,38 +373,39 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             for (int i = 0; i < jArray.length(); i++)
             {
                 jObject = (JSONObject) jArray.get(i);
+                String carId = "Car" + String.valueOf(jObject.getInt("carId"));
                 cords = new LatLng((Double) jObject.get("lastKnownPositionLatitude"), (Double) jObject.get("lastKnownPositionLongitude"));
                 Log.d("initAllCars()", cords.toString());
 
                 if(jObject.getInt("chargingState") != 1)
-                    createMarker(jObject.getString("model"), cords, String.valueOf(jObject.getInt("carId")));
+                    createMarker(jObject.getString("model"), cords, carId);
 
                 if(jObject.getInt("chargingState") == 2)
                 {
                     switch(getChargeLevel(jObject.getInt("chargeLevel"))) {
                         case 1:
-                            setMarkerImage(String.valueOf(jObject.getInt("carId")), "charging0");
+                            setMarkerImage(carId, "charging0");
                             break;
                         case 2:
-                            setMarkerImage(String.valueOf(jObject.getInt("carId")), "charging25");
+                            setMarkerImage(carId, "charging25");
                             break;
                         case 3:
-                            setMarkerImage(String.valueOf(jObject.getInt("carId")), "charging50");
+                            setMarkerImage(carId, "charging50");
                             break;
                         case 4:
-                            setMarkerImage(String.valueOf(jObject.getInt("carId")), "charging75");
+                            setMarkerImage(carId, "charging75");
                             break;
                         case 5:
-                            setMarkerImage(String.valueOf(jObject.getInt("carId")), "charging100");
+                            setMarkerImage(carId, "charging100");
                             break;
                     }
                 }
                 else if(jObject.getInt("chargingState") == 3 && jObject.getInt("bookingState") == 1)
-                    setMarkerImage(String.valueOf(jObject.getInt("carId")), "freecar");
+                    setMarkerImage(carId, "freecar");
                 else if(jObject.getInt("chargingState") == 3 && jObject.getInt("bookingState") == 2)
-                    setMarkerImage(String.valueOf(jObject.getInt("carId")), "reservedcar");
+                    setMarkerImage(carId, "reservedcar");
                 else if(jObject.getInt("chargingState") == 3 && jObject.getInt("bookingState") == 3)
-                    setMarkerImage(String.valueOf(jObject.getInt("carId")), "reservedcar");
+                    setMarkerImage(carId, "reservedcar");
             }
         }
         catch(Exception e)
@@ -487,7 +502,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     *
     *  @return true on success, else false
     **/
-    private boolean drawRoute()
+    private void drawRoute()
     {
         LatLng origin = new LatLng(49.485000, 8.468000);
         LatLng dest = new LatLng(49.500000, 8.500000);
@@ -495,10 +510,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Getting URL to the Google Directions API
         String url = getUrl(origin, dest);
         Log.d("drawRoute()SETTING URL:", url);
-        FetchUrl FetchUrl = new FetchUrl();
+        FetchUrl fetchUrl = new FetchUrl();
         // Start downloading json data from Google Directions API
-        FetchUrl.execute(url);
-        return true;
+        fetchUrl.execute(url);
     }
 
 
@@ -580,6 +594,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 break;
             }
         }
+
         switch (imageType) {
             case "freestation":
                 assert currMarker != null;

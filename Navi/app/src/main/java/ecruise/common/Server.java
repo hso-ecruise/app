@@ -9,15 +9,13 @@ import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.Volley;
 
 
-public class Server
-{
+public class Server {
     private static Server mInstance;
     private RequestQueue mRequestQueue;
-    private ImageLoader mImageLoader;
     private static Context mCtx;
 
     /**
-     *  Constructor
+     * Constructor
      **/
     private Server(Context context)
     {
@@ -26,14 +24,18 @@ public class Server
     }
 
     /**
-     *  This method create a synchronized instance of Server depending on context
+     * This method create a synchronized instance of Server depending on context
      *
-     *  @param context context form Activity
-     *
-     *  @return server instance
+     * @param context context form Activity
+     * @return server instance
      **/
-    public static synchronized Server getInstance(Context context) {
-        if (mInstance == null) {
+    public static synchronized Server getInstance(Context context)
+    {
+        if(context == null)
+            return null;
+
+        if (mInstance == null)
+        {
             mInstance = new Server(context);
         }
         return mInstance;
@@ -41,12 +43,14 @@ public class Server
 
 
     /**
-     *  This method create a synchronized instance of Server depending on context
+     * This method create a synchronized instance of Server depending on context
      *
-     *  @return srequest Queue for Volley
+     * @return request Queue for Volley
      **/
-    public RequestQueue getRequestQueue() {
-        if (mRequestQueue == null) {
+    private RequestQueue getRequestQueue()
+    {
+        if (mRequestQueue == null)
+        {
             // getApplicationContext() is key, it keeps you from leaking the
             // Activity or BroadcastReceiver if someone passes one in.
             mRequestQueue = Volley.newRequestQueue(mCtx.getApplicationContext());
@@ -55,17 +59,13 @@ public class Server
     }
 
     /**
-     *  This method add the request to request Que
+     * This method add the request to request Que
      *
-     *  @param req request for que adding
-     *
+     * @param req request for que adding
      **/
-    public <T> void addToRequestQueue(Request<T> req) {
-        getRequestQueue().add(req);
+    public <T> void addToRequestQueue(Request<T> req)
+    {
+        if(req != null)
+            getRequestQueue().add(req);
     }
-
-    public boolean checkLoginData(String email, String password) {
-        return true;
-    }
-
 }

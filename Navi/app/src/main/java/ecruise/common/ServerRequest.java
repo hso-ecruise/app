@@ -39,7 +39,7 @@ public class ServerRequest
      *
      *  @return json object
      **/
-    public void generateJsonObject(String url, VolleyCallbackObject callback)
+    /*public void generateJsonObject(String url, VolleyCallbackObject callback)
     {
         final VolleyCallbackObject mCallback = callback;
         final String mToken = "01aebbbdcbcf50a9b8ae1f8cf121aa2ea2bf3d2556467a7d822cea437b361780b2a2dc19a95ab7f8c91eb830e91c29e3095484588f3532f6ef7a000bb643940b";
@@ -70,7 +70,7 @@ public class ServerRequest
                 };
 
        Server.getInstance(mCtx).addToRequestQueue(jsObjRequest);
-    }
+    }*/
 
 
     /**
@@ -84,14 +84,15 @@ public class ServerRequest
     public void generateJsonArray(String url, VolleyCallbackArray callback)
     {
         final VolleyCallbackArray mCallback = callback;
-        final String mToken = "01aebbbdcbcf50a9b8ae1f8cf121aa2ea2bf3d2556467a7d822cea437b361780b2a2dc19a95ab7f8c91eb830e91c29e3095484588f3532f6ef7a000bb643940b";
+        final String mToken = "cfda19711d1a74dde7697a30d2cff2afa49e86726d5394f160cda3680b30eb575b9643e4519a9ee17296373ec4e93eb744eadb29636eccc8669fbc1868810d4b";
         JsonArrayRequest jsArrayRequest = new JsonArrayRequest
                 (Request.Method.GET, url, null, new Response.Listener<JSONArray>()
                 {
                     @Override
                     public void onResponse(JSONArray response)
                     {
-                        mCallback.onSuccess(response);
+                        if(response == null)
+                            mCallback.onSuccess(response);
                     }
                 }, new Response.ErrorListener() {
 
