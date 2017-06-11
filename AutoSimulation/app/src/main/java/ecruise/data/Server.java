@@ -6,7 +6,7 @@ import ecruise.logic.CarState;
 /**
  * Created by Tom on 21.03.2017.
  */
-// This is a helper class to make the ServerConnection act like an singleton
+// This is a helper class to make the ServerConnection act like a singleton
 public class Server
 {
     private static IServerConnection connection;
