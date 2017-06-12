@@ -87,22 +87,40 @@ public class MainActivity extends AppCompatActivity
                     EditText editText = (EditText) findViewById(R.id.editTextNfcId);
                     String userId = editText.getText().toString();
                     ((DemoNFCReader) nfcReader).setUserID(userId);
-                    ColorCode result = scanLED.calculateColorCode();
-                    blinkScanLED(colorsFromColorCode(result));
-                    setInfoText("RFID-Card gescannt");
+                    ColorCode result = handleScan();
 
                     if (result == ColorCode.GREEN)
                     {
-                        setStatusColorCode(ColorCode.OFF);
-                        setStatusText(getResources().getString(R.string.discarging));
                         ((DemoServerConnection) Server.getConnection()).SetDischarging();
                         LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutFallback);
                         linearLayout.setVisibility(View.GONE);
-
                     }
                 }
             });
         }
+
+        // during a trip to end the trip
+        Button button = (Button) findViewById(R.id.buttonEndTrip);
+        button.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                EditText editText = (EditText) findViewById(R.id.editTextDistanceTravelled);
+                int distanceTravelled = Integer.parseInt(editText.getText().toString());
+                editText = (EditText) findViewById(R.id.editTextEndChargingStation);
+                int endChargingStationId = Integer.parseInt(editText.getText().toString());
+                Server.getConnection().endTrip(distanceTravelled, endChargingStationId);
+                LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutTrip);
+                linearLayout.setVisibility(View.GONE);
+
+                if (nfcReader instanceof DemoNFCReader)
+                {
+                    LinearLayout linearLayoutFallback = (LinearLayout) findViewById(R.id.linearLayoutFallback);
+                    linearLayoutFallback.setVisibility(View.VISIBLE);
+                }
+            }
+        });
 
 
         scanLED = new ScanLED(nfcReader);
@@ -156,21 +174,29 @@ public class MainActivity extends AppCompatActivity
         {
             if (((NFCReader) nfcReader).isReady(intent))
             {
-                ColorCode result = scanLED.calculateColorCode();
-                blinkScanLED(colorsFromColorCode(result));
-                setInfoText("RFID-Card gescannt");
-
-                if (result == ColorCode.GREEN)
-                {
-                    setStatusColorCode(ColorCode.OFF);
-                    setStatusText(getResources().getString(R.string.discarging));
-                }
+                handleScan();
             }
         }
         catch (ClassCastException e)
         {
 
         }
+    }
+
+    private ColorCode handleScan()
+    {
+        ColorCode result = scanLED.calculateColorCode();
+        blinkScanLED(colorsFromColorCode(result));
+        setInfoText("RFID-Card gescannt");
+
+        if (result == ColorCode.GREEN)
+        {
+            setStatusColorCode(ColorCode.OFF);
+            setStatusText(getResources().getString(R.string.discarging));
+            LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutTrip);
+            linearLayout.setVisibility(View.VISIBLE);
+        }
+        return result;
     }
 
     private int colorsFromColorCode(ColorCode colorCode)

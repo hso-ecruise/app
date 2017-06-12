@@ -25,6 +25,47 @@
         </ScrollView>
         <LinearLayout
                 android:orientation="vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:id="@+id/linearLayoutTrip"
+                android:visibility="gone">
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+                <TextView
+                        android:text="Distanz in m"
+                        android:layout_width="111dp"
+                        android:layout_height="wrap_content" android:id="@+id/textView"/>
+                <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName"
+                        android:text="10000"
+                        android:ems="10"
+                        android:id="@+id/editTextDistanceTravelled" android:layout_weight="1"/>
+            </LinearLayout>
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+                <TextView
+                        android:text="Endladestation ID"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/textView3"/>
+                <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:ems="10"
+                        android:id="@+id/editTextEndChargingStation" android:layout_weight="1"/>
+            </LinearLayout>
+            <Button
+                    android:text="Trip Beenden"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/buttonEndTrip"/>
+        </LinearLayout>
+        <LinearLayout
+                android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:id="@+id/linearLayoutFallback"
                 android:visibility="gone">

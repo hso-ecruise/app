@@ -41,7 +41,7 @@ public class ScanLED_Test
     public IScanDevice testNFCReader = new IScanDevice()
     {
         @Override
-        public String scanUserId()
+        public String scanChipCardUid()
         {
             return "";
         }

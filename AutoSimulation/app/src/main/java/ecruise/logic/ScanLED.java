@@ -1,8 +1,6 @@
 package ecruise.logic;
 
-import android.content.Context;
 import ecruise.data.IScanDevice;
-import ecruise.data.NFCReader;
 import ecruise.data.Server;
 
 /**
@@ -25,7 +23,7 @@ public class ScanLED
         switch (new StatusLED().calculateCarState())
         {
             case BOOKED_FULL:
-                if (Server.getConnection().checkID(scanDevice.scanUserId()))
+                if (Server.getConnection().checkID(scanDevice.scanChipCardUid()))
                 {
                     return ColorCode.GREEN;
                 }
@@ -34,7 +32,7 @@ public class ScanLED
                     return ColorCode.RED;
                 }
             case BOOKED_CHARGING:
-                if (Server.getConnection().checkID(scanDevice.scanUserId()))
+                if (Server.getConnection().checkID(scanDevice.scanChipCardUid()))
                 {
                     return ColorCode.YELLOW;
                 }
@@ -45,7 +43,11 @@ public class ScanLED
             case AVAILABLE_CHARGING:
                 return ColorCode.YELLOW;
             case AVAILABLE_FULL:
-                return ColorCode.GREEN;
+                String chipCardId = scanDevice.scanChipCardUid();
+                if (Server.getConnection().startTrip(chipCardId))
+                    return ColorCode.GREEN;
+                else
+                    return ColorCode.RED;
             case BLOCKED:
                 return ColorCode.RED;
         }

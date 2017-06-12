@@ -9,7 +9,7 @@ public class DemoNFCReader implements IScanDevice
     private String userID;
 
     @Override
-    public String scanUserId()
+    public String scanChipCardUid()
     {
         return userID;
     }

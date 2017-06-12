@@ -34,7 +34,7 @@ public class NFCReader implements IScanDevice
     }
 
     @Override
-    public String scanUserId()
+    public String scanChipCardUid()
     {
         if (intent == null)
             throw new IllegalStateException("Check isReady() before calling this method");

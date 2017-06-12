@@ -53,4 +53,17 @@ public class DemoServerConnection implements IServerConnection
     {
         return chargingState;
     }
+
+    @Override
+    public boolean startTrip(String chipCardUid)
+    {
+        return false;
+    }
+
+
+    @Override
+    public void endTrip(int distanceTravelled, int endCharingStationId)
+    {
+
+    }
 }

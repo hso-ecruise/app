@@ -5,5 +5,5 @@ package ecruise.data;
  */
 public interface IScanDevice
 {
-    String scanUserId();
+    String scanChipCardUid();
 }
