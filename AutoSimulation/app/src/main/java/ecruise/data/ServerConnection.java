@@ -2,7 +2,10 @@ package ecruise.data;
 
 import android.content.Context;
 import android.util.Log;
-import com.android.volley.*;
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.Volley;
@@ -11,7 +14,6 @@ import ecruise.logic.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import com.android.volley.toolbox.JsonArrayRequest;
 
 import java.security.InvalidParameterException;
 import java.text.ParseException;
@@ -30,14 +32,13 @@ import java.util.concurrent.TimeoutException;
 public class ServerConnection implements IServerConnection
 {
     private static final String CAR_ID = "0";
-    private static final String EMAIL = "";
-    private static final String PASSWORD = "";
-
-    private String token;
+    private static final String AUTH_EMAIL = "";
+    private static final String AUTH_PASSWORD = "";
+    private String accessToken;
 
     private BookingState bookingState = null;
     private ChargingState chargingState = null;
-    private String bookedChipCardUid = null; // if the car is booked, this will be the unique bookedChipCardUid of the customer
+    private String bookedChipCardUid = null;
     private int tripId = -1;
 
     private RequestQueue requestQueue;
@@ -51,32 +52,6 @@ public class ServerConnection implements IServerConnection
         {
             throw new InvalidParameterException("Credentials are invalid for api.ecruise.me");
         }
-
-        // A copy of the relevant servers values is polled every 10 s
-        Thread thread = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                while (true)
-                {
-                    // the update methods do the polling asynchronously
-                    updateBookingState();
-                    updateChargingState();
-                    updateChipCardUid();
-
-                    try
-                    {
-                        Thread.sleep(10000);
-                    }
-                    catch (InterruptedException e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-        thread.start();
     }
 
     private RequestQueue getRequestQueue()
@@ -97,8 +72,8 @@ public class ServerConnection implements IServerConnection
 
     private boolean authenticate()
     {
-        String url = "https://api.ecruise.me/v1/public/login/" + EMAIL;
-        String stringRequest = "\"" + PASSWORD + "\"";
+        String url = "https://api.ecruise.me/v1/public/login/" + AUTH_EMAIL;
+        String stringRequest = "\"" + AUTH_PASSWORD + "\"";
         RequestFuture<JSONObject> future = RequestFuture.newFuture();
         JsonStringRequest jsObjRequest = new JsonStringRequest
                 (Request.Method.POST, url, stringRequest, future, future);
@@ -108,7 +83,7 @@ public class ServerConnection implements IServerConnection
         try
         {
             JSONObject response = future.get(5, TimeUnit.SECONDS); // this will block
-            token = response.getString("token");
+            accessToken = response.getString("accessToken");
         }
         catch (ExecutionException | JSONException | InterruptedException | TimeoutException e1)
         {
@@ -121,20 +96,64 @@ public class ServerConnection implements IServerConnection
     @Override
     public boolean checkID(String chipCardUid)
     {
-        if (chipCardUid == null)
+        if (getBookingState() != BookingState.BOOKED)
             throw new IllegalStateException("This car is not booked");
+
+        try
+        {
+            updateBookedChipCardUid();
+        }
+        catch (ExecutionException | ParseException | JSONException | InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+
         return chipCardUid.equals(this.bookedChipCardUid);
+    }
+
+    @Override
+    public boolean checkIDExists(String chipCardUid)
+    {
+        try
+        {
+            getCustomerIdFromChipCardUid(chipCardUid);
+        }
+        catch (InvalidParameterException e)
+        {
+            return false;
+        }
+        catch (InterruptedException | ExecutionException | JSONException e)
+        {
+            e.printStackTrace();
+        }
+        return true;
     }
 
     @Override
     public BookingState getBookingState()
     {
+        try
+        {
+            updateCarState();
+        }
+        catch (ExecutionException | JSONException | InterruptedException e)
+        {
+            e.printStackTrace();
+        }
         return bookingState;
     }
 
     @Override
     public ChargingState getChargingState()
     {
+        try
+        {
+            updateCarState();
+        }
+        catch (ExecutionException | JSONException | InterruptedException e)
+        {
+            e.printStackTrace();
+        }
         return chargingState;
     }
 
@@ -149,13 +168,14 @@ public class ServerConnection implements IServerConnection
             trip.put("customerId", getCustomerIdFromChipCardUid(chipCardUid));
             trip.put("startDate", new JsonDate(Calendar.getInstance()).getString());
         }
-        catch (JSONException e)
-        {
-            e.printStackTrace();
-        }
         catch (InvalidParameterException e)
         {
+            // There is no customer with this ChipCardUid
             return false;
+        }
+        catch (InterruptedException | ExecutionException | JSONException e)
+        {
+            e.printStackTrace();
         }
 
         RequestFuture<JSONObject> future = RequestFuture.newFuture();
@@ -166,7 +186,7 @@ public class ServerConnection implements IServerConnection
             public Map<String, String> getHeaders() throws AuthFailureError
             {
                 Map<String, String> params = new HashMap<>();
-                params.put("access_token", token);
+                params.put("access_token", accessToken);
                 return params;
             }
         };
@@ -185,6 +205,7 @@ public class ServerConnection implements IServerConnection
         }
         return true;
     }
+
 
     @Override
     public void endTrip(int distanceTravelled, int endCharingStationId)
@@ -212,7 +233,7 @@ public class ServerConnection implements IServerConnection
             public Map<String, String> getHeaders() throws AuthFailureError
             {
                 Map<String, String> params = new HashMap<>();
-                params.put("access_token", token);
+                params.put("access_token", accessToken);
                 return params;
             }
         };
@@ -233,6 +254,7 @@ public class ServerConnection implements IServerConnection
     }
 
     private String getCustomerIdFromChipCardUid(String chipCardUid)
+            throws ExecutionException, InterruptedException, JSONException, InvalidParameterException
     {
         String url = "https://api.ecruise.me/v1/customers/";
 
@@ -244,238 +266,147 @@ public class ServerConnection implements IServerConnection
             public Map<String, String> getHeaders() throws AuthFailureError
             {
                 Map<String, String> params = new HashMap<>();
-                params.put("access_token", token);
+                params.put("access_token", accessToken);
                 return params;
             }
         };
 
         addToRequestQueue(jsonArrayRequest);
 
-        try
-        {
-            JSONArray customers = future.get(); // this will block
 
-            for (int i = 0; i < customers.length(); i++)
+        JSONArray customers = future.get(); // this will block
+
+        for (int i = 0; i < customers.length(); i++)
+        {
+            JSONObject customer = customers.getJSONObject(i);
+            if (customer.getString("chipCardUid").equals(chipCardUid))
             {
-                JSONObject customer = customers.getJSONObject(i);
-                if (customer.getString("bookedChipCardUid").equals(chipCardUid))
-                {
-                    return customer.getString("customerId");
-                }
+                return customer.getString("customerId");
             }
         }
-        catch (InterruptedException | JSONException | ExecutionException e)
-        {
-            e.printStackTrace();
-        }
+
         throw new InvalidParameterException("No Customer with bookedChipCardUid " + chipCardUid + " found");
     }
 
-    private void updateBookingState()
+    private String getChipCardUidFromCustomerId(String customerId)
+            throws JSONException, ExecutionException, InterruptedException
     {
-        String url = "https://api.ecruise.me/v1/cars/" + CAR_ID;
+        String url = "https://api.ecruise.me/v1/customers/" + customerId;
 
-        JsonObjectRequest request = new JsonObjectRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONObject>()
-                {
-                    @Override
-                    public void onResponse(JSONObject car)
-                    {
-                        try
-                        {
-                            switch (car.getString("bookingState"))
-                            {
-                                case "AVAILABLE":
-                                    bookingState = BookingState.AVAILABLE;
-                                    break;
-                                case "BOOKED":
-                                    bookingState = BookingState.BOOKED;
-                                    break;
-                                case "BLOCKED":
-                                    bookingState = BookingState.BLOCKED;
-                                    break;
-                                default:
-                                    Log.e("ServerConnection", "Unknown Bookingstate recieved from Server");
-                                    break;
-                            }
-                            Log.d("ServerConnection", "updateBookingState to " + bookingState);
-                        }
-                        catch (JSONException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener()
-                {
-                    @Override
-                    public void onErrorResponse(VolleyError error)
-                    {
-                        Log.e("ServerConnection", "Recieved " + error.getMessage() + ". Make sure the Car is present with the carId " + CAR_ID);
-                    }
-                })
+        RequestFuture<JSONObject> future = RequestFuture.newFuture();
+        JsonObjectRequest jsonArrayRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, future, future)
         {
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError
             {
                 Map<String, String> params = new HashMap<>();
-                params.put("access_token", token);
+                params.put("access_token", accessToken);
                 return params;
             }
         };
-        addToRequestQueue(request);
+        addToRequestQueue(jsonArrayRequest);
+
+        JSONObject customer = future.get(); // this will block
+        return customer.getString("chipCardUid");
     }
 
-    private void updateChargingState()
+    private void updateCarState()
+            throws ExecutionException, InterruptedException, JSONException
     {
         String url = "https://api.ecruise.me/v1/cars/" + CAR_ID;
-
+        RequestFuture<JSONObject> future = RequestFuture.newFuture();
         JsonObjectRequest request = new JsonObjectRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONObject>()
-                {
-                    @Override
-                    public void onResponse(JSONObject car)
-                    {
-                        try
-                        {
-                            switch (car.getString("chargingState"))
-                            {
-                                case "DISCHARGING":
-                                    chargingState = ChargingState.DISCHARGING;
-                                    break;
-                                case "CHARGING":
-                                    chargingState = ChargingState.CHARGING;
-                                    break;
-                                case "FULL":
-                                    chargingState = ChargingState.FULL;
-                                    break;
-                                default:
-                                    Log.e("ServerConnection", "Unknown ChargingState recieved from Server");
-                                    break;
-                            }
-                            Log.d("ServerConnection", "updateBookingstate to " + chargingState);
-                        }
-                        catch (JSONException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener()
-                {
-                    @Override
-                    public void onErrorResponse(VolleyError error)
-                    {
-                        Log.e("ServerConnection", "Recieved " + error.getMessage() + ". Make sure the Car is present with the carId " + CAR_ID);
-                    }
-                })
+                (Request.Method.GET, url, null, future, future)
         {
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError
             {
                 Map<String, String> params = new HashMap<>();
-                params.put("access_token", token);
+                params.put("access_token", accessToken);
                 return params;
             }
         };
         addToRequestQueue(request);
+
+        JSONObject car = future.get();
+
+        switch (car.getString("chargingState"))
+        {
+            case "DISCHARGING":
+                chargingState = ChargingState.DISCHARGING;
+                break;
+            case "CHARGING":
+                chargingState = ChargingState.CHARGING;
+                break;
+            case "FULL":
+                chargingState = ChargingState.FULL;
+                break;
+            default:
+                Log.e("ServerConnection", "Unknown ChargingState received from Server");
+                break;
+        }
+        Log.d("ServerConnection", "updateBookingstate to " + chargingState);
+
+        switch (car.getString("bookingState"))
+        {
+            case "AVAILABLE":
+                bookingState = BookingState.AVAILABLE;
+                break;
+            case "BOOKED":
+                bookingState = BookingState.BOOKED;
+                break;
+            case "BLOCKED":
+                bookingState = BookingState.BLOCKED;
+                break;
+            default:
+                Log.e("ServerConnection", "Unknown BookingState received from Server");
+                break;
+        }
+        Log.d("ServerConnection", "updateBookingState to " + bookingState);
     }
 
-    private void updateChipCardUid()
+    private void updateBookedChipCardUid()
+            throws ExecutionException, InterruptedException, JSONException, ParseException
+    {
+        JSONArray trips = getTrips();
+
+        for (int i = 0; i < trips.length(); i++)
+        {
+            JSONObject trip = trips.getJSONObject(i);
+
+            JsonDate startDate = new JsonDate(trip.getString("startDate"));
+
+            // trip is in future ("30 min booking")
+            if (startDate.getCalendar().after(Calendar.getInstance()))
+            {
+                String bookedCustomerId = trip.getString("customerId");
+                bookedChipCardUid = getChipCardUidFromCustomerId(bookedCustomerId);
+                break;
+            }
+        }
+    }
+
+    private JSONArray getTrips()
+            throws ExecutionException, InterruptedException
     {
         String url = "https://api.ecruise.me/v1//trips/by-car/" + CAR_ID;
 
+        RequestFuture<JSONArray> future = RequestFuture.newFuture();
         JsonArrayRequest request = new JsonArrayRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONArray>()
-                {
-                    @Override
-                    public void onResponse(JSONArray trips)
-                    {
-                        try
-                        {
-                            for (int i = 0; i < trips.length(); i++)
-                            {
-                                JSONObject trip = null;
-                                trip = trips.getJSONObject(i);
-
-                                JsonDate startDate = new JsonDate(trip.getString("startDate"));
-
-                                // trip is in future ("30 min booking")
-                                if (startDate.getCalendar().after(Calendar.getInstance()))
-                                {
-                                    String customerId = trip.getString("customerId");
-
-                                    String url = "https://api.ecruise.me/v1/customers/" + customerId;
-
-                                    JsonObjectRequest innerRequest = new JsonObjectRequest
-                                            (Request.Method.GET, url, null, new Response.Listener<JSONObject>()
-                                            {
-                                                @Override
-                                                public void onResponse(JSONObject customer)
-                                                {
-                                                    try
-                                                    {
-                                                        bookedChipCardUid = customer.getString("bookedChipCardUid");
-                                                        Log.d("ServerConnection", "updateChipCardUid to " + bookedChipCardUid);
-                                                    }
-                                                    catch (JSONException e)
-                                                    {
-                                                        e.printStackTrace();
-                                                    }
-                                                }
-                                            }, new Response.ErrorListener()
-                                            {
-                                                @Override
-                                                public void onErrorResponse(VolleyError error)
-                                                {
-                                                    Log.e("ServerConnection", "Recieved " + error.getMessage());
-                                                }
-                                            })
-                                    {
-                                        @Override
-                                        public Map<String, String> getHeaders() throws AuthFailureError
-                                        {
-                                            Map<String, String> params = new HashMap<>();
-                                            params.put("access_token", token);
-                                            return params;
-                                        }
-                                    };
-
-                                    addToRequestQueue(innerRequest);
-
-                                    // only one trip can match this condition
-                                    break;
-                                }
-                                else
-                                {
-                                    bookedChipCardUid = null;
-                                }
-                            }
-                        }
-                        catch (JSONException e)
-                        {
-                            e.printStackTrace();
-                        }
-                        catch (ParseException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener()
-                {
-                    @Override
-                    public void onErrorResponse(VolleyError error)
-                    {
-                        Log.e("ServerConnection", "Recieved " + error.getMessage());
-                    }
-                })
+                (Request.Method.GET, url, null, future, future)
         {
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError
             {
                 Map<String, String> params = new HashMap<>();
-                params.put("access_token", token);
+                params.put("access_token", accessToken);
                 return params;
             }
         };
         addToRequestQueue(request);
+
+        return future.get();
     }
+
 }

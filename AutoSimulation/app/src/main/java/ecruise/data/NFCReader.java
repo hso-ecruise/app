@@ -18,17 +18,15 @@ public class NFCReader implements IScanDevice
     private NfcAdapter nfcAdapter;
     private Intent intent;
 
-    public NFCReader(Context context)
+    public NFCReader(Context context) throws NoSuchElementException
     {
         nfcAdapter = NfcAdapter.getDefaultAdapter(context);
         if (nfcAdapter == null)
         {
-            Logger.getInstance().log("Dieses Gerät unterstützt kein NFC");
-            throw new NoSuchElementException("No NFC found on this device");
+            throw new NoSuchElementException("No NFC-Reader found on this device");
         }
         if (!nfcAdapter.isEnabled())
         {
-            Logger.getInstance().log("Auf diesem Gerät ist NFC ausgeschaltet");
             throw new NoSuchElementException("No NFC enabled on this device");
         }
     }

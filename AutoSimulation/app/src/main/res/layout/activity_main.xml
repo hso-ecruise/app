@@ -64,23 +64,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:id="@+id/buttonEndTrip"/>
         </LinearLayout>
-        <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:id="@+id/linearLayoutFallback"
-                android:visibility="gone">
-            <EditText
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textPersonName"
-                    android:text="04:AA:38:62:02:49:80"
-                    android:ems="10"
-                    android:id="@+id/editTextNfcId"/>
-            <Button
-                    android:text="Scan chipCardUid"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" android:id="@+id/buttonScanNfc"/>
-        </LinearLayout>
         <View
                 android:layout_width="match_parent"
                 android:layout_height="76dp" android:background="@color/colorConnecting" android:id="@+id/statusLed"/>
@@ -94,7 +77,7 @@
                 android:layout_height="wrap_content" android:layout_marginRight="@dimen/activity_horizontal_margin"
                 android:layout_marginLeft="@dimen/activity_horizontal_margin">
             <TextView
-                    android:text="Scannen Sie Ihre RFID-Card"
+                    android:text="@string/prompt"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:layout_weight="1" android:id="@+id/infoText"/>
             <LinearLayout

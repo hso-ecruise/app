@@ -1,8 +1,11 @@
 package ecruise.logic;
 
 import ecruise.data.*;
+import org.json.JSONException;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
 
@@ -25,6 +28,12 @@ public class ScanLED_Test
         }
 
         @Override
+        public boolean checkIDExists(String chipCardUid)
+        {
+            return false;
+        }
+
+        @Override
         public BookingState getBookingState()
         {
             return bookingState;
@@ -34,6 +43,18 @@ public class ScanLED_Test
         public ChargingState getChargingState()
         {
             return chargingState;
+        }
+
+        @Override
+        public boolean startTrip(String chipCardUid)
+        {
+            return false;
+        }
+
+        @Override
+        public void endTrip(int distanceTravelled, int endCharingStationId)
+        {
+
         }
 
     };

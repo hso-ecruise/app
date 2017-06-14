@@ -4,12 +4,8 @@ import ecruise.data.BookingState;
 import ecruise.data.ChargingState;
 import ecruise.data.IServerConnection;
 import ecruise.data.Server;
-import ecruise.logic.ColorCode;
-import ecruise.logic.StatusLED;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.security.KeyStore;
 
 import static org.junit.Assert.assertEquals;
 
@@ -33,6 +29,12 @@ public class StatusLED_Test
         }
 
         @Override
+        public boolean checkIDExists(String chipCardUid)
+        {
+            return false;
+        }
+
+        @Override
         public BookingState getBookingState()
         {
             return bookingState;
@@ -42,6 +44,18 @@ public class StatusLED_Test
         public ChargingState getChargingState()
         {
             return chargingState;
+        }
+
+        @Override
+        public boolean startTrip(String chipCardUid)
+        {
+            return false;
+        }
+
+        @Override
+        public void endTrip(int distanceTravelled, int endCharingStationId)
+        {
+
         }
 
 

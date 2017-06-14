@@ -1,21 +1,24 @@
 package ecruise.autosimulation;
 
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.widget.*;
-import ecruise.data.*;
+import ecruise.data.NFCReader;
+import ecruise.data.Server;
+import ecruise.data.ServerConnection;
 import ecruise.logic.*;
 
+import java.security.InvalidParameterException;
+import java.util.NoSuchElementException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -23,7 +26,7 @@ public class MainActivity extends AppCompatActivity
 {
     private ScanLED scanLED;
     private StatusLED statusLED;
-    private IScanDevice nfcReader;
+    private NFCReader nfcReader;
 
     private Timer statusTimer = new Timer();
 
@@ -65,39 +68,20 @@ public class MainActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Server.setConnection(new ServerConnection(getApplicationContext()));
-
         try
         {
+            Server.setConnection(new ServerConnection(getApplicationContext()));
             nfcReader = new NFCReader(getApplicationContext());
         }
-        // if there is no NFC-Reader present on the device, a inputText for manual typing of
-        // the ID is provided
-        catch (Exception e)
+        catch (NoSuchElementException | InvalidParameterException e)
         {
-            nfcReader = new DemoNFCReader();
-            LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutFallback);
-            linearLayout.setVisibility(View.VISIBLE);
-            Button button = (Button) findViewById(R.id.buttonScanNfc);
-            button.setOnClickListener(new View.OnClickListener()
-            {
-                @Override
-                public void onClick(View v)
-                {
-                    EditText editText = (EditText) findViewById(R.id.editTextNfcId);
-                    String userId = editText.getText().toString();
-                    ((DemoNFCReader) nfcReader).setUserID(userId);
-                    ColorCode result = handleScan();
-
-                    if (result == ColorCode.GREEN)
-                    {
-                        ((DemoServerConnection) Server.getConnection()).SetDischarging();
-                        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutFallback);
-                        linearLayout.setVisibility(View.GONE);
-                    }
-                }
-            });
+            e.printStackTrace();
+            Logger.getInstance().log(e.getMessage());
+            setInfoText(getResources().getString(R.string.internal_error));
+            setStatusText(getResources().getString(R.string.internal_error));
+            return;
         }
+
 
         // during a trip to end the trip
         Button button = (Button) findViewById(R.id.buttonEndTrip);
@@ -110,22 +94,16 @@ public class MainActivity extends AppCompatActivity
                 int distanceTravelled = Integer.parseInt(editText.getText().toString());
                 editText = (EditText) findViewById(R.id.editTextEndChargingStation);
                 int endChargingStationId = Integer.parseInt(editText.getText().toString());
+
                 Server.getConnection().endTrip(distanceTravelled, endChargingStationId);
+
                 LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutTrip);
                 linearLayout.setVisibility(View.GONE);
-
-                if (nfcReader instanceof DemoNFCReader)
-                {
-                    LinearLayout linearLayoutFallback = (LinearLayout) findViewById(R.id.linearLayoutFallback);
-                    linearLayoutFallback.setVisibility(View.VISIBLE);
-                }
             }
         });
 
-
         scanLED = new ScanLED(nfcReader);
         statusLED = new StatusLED();
-
 
         statusTimer.scheduleAtFixedRate(new TimerTask()
         {
@@ -134,7 +112,7 @@ public class MainActivity extends AppCompatActivity
             {
                 updateHandler.obtainMessage(1).sendToTarget();
             }
-        }, 5000, 1000);
+        }, 5000, 10000);
     }
 
     @Override
@@ -142,14 +120,7 @@ public class MainActivity extends AppCompatActivity
     protected void onResume()
     {
         super.onResume();
-        try
-        {
-            ((NFCReader) nfcReader).onResume(this);
-        }
-        catch (ClassCastException e)
-        {
-
-        }
+        nfcReader.onResume(this);
     }
 
     @Override
@@ -157,29 +128,15 @@ public class MainActivity extends AppCompatActivity
     protected void onPause()
     {
         super.onPause();
-        try
-        {
-            ((NFCReader) nfcReader).onPause(this);
-        }
-        catch (ClassCastException e)
-        {
-
-        }
+        nfcReader.onPause(this);
     }
 
     @Override
     protected void onNewIntent(Intent intent)
     {
-        try
+        if (nfcReader.isReady(intent))
         {
-            if (((NFCReader) nfcReader).isReady(intent))
-            {
-                handleScan();
-            }
-        }
-        catch (ClassCastException e)
-        {
-
+            handleScan();
         }
     }
 
@@ -187,7 +144,7 @@ public class MainActivity extends AppCompatActivity
     {
         ColorCode result = scanLED.calculateColorCode();
         blinkScanLED(colorsFromColorCode(result));
-        setInfoText("RFID-Card gescannt");
+        setInfoText(getResources().getString(R.string.scanned));
 
         if (result == ColorCode.GREEN)
         {
