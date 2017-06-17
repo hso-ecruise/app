@@ -5,6 +5,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.app.LoaderManager.LoaderCallbacks;
 
@@ -26,6 +28,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -68,6 +71,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    private CheckBox mKeepLogin;
+    private boolean keepLogin = false;
+    private Context mCtx;
 
     /**
      * initializes the activity
@@ -77,11 +83,29 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        mCtx = this.getApplicationContext();
+        SharedPreferences savedLogin =  PreferenceManager.getDefaultSharedPreferences(mCtx);
+        int userId = savedLogin.getInt("userId", 0);
+        String token = savedLogin.getString("token", "");
+
+        if(userId != 0 && !token.equals(""))
+        {
+            Log.d("Id", Integer.toString(userId));
+            Log.d("Token", token);
+            Customer.getInstance(this.getApplicationContext()).setId(userId);
+            Customer.getInstance(this.getApplicationContext()).setToken(token);
+            finish();
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            startActivity(intent);
+        }
+
+
         startService(new Intent(this, PullBooking.class));
 
         setContentView(R.layout.activity_login);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
+        mKeepLogin = (CheckBox) findViewById(R.id.stayLoggedInBox);
 
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -133,6 +157,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             return;
         }
 
+        if (mKeepLogin.isChecked())
+        {
+            keepLogin = true;
+        }
+        else
+        {
+            keepLogin = false;
+        }
         // Reset errors.
         mEmailView.setError(null);
         mPasswordView.setError(null);
@@ -332,6 +364,20 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 Customer.getInstance(mCtx).setId(response.getInt("id"));
                 Customer.getInstance(mCtx).setToken(response.getString("token"));
                 Customer.getInstance(mCtx).setPassword(mPassword);
+                SharedPreferences savedLogin =  PreferenceManager.getDefaultSharedPreferences(mCtx);
+                SharedPreferences.Editor editor = savedLogin.edit();
+                if(keepLogin)
+                {
+                    editor.putInt("userId", Customer.getInstance(mCtx).getId());
+                    editor.putString("token", Customer.getInstance(mCtx).getToken());
+                }
+                else
+                {
+                    Log.d("Logout", "Login");
+                    editor.putInt("userId", 0);
+                    editor.putString("token", "");
+                }
+                editor.commit();
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (InterruptedException e1) {

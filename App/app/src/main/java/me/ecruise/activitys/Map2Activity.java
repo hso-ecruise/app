@@ -1,8 +1,22 @@
 package me.ecruise.activitys;
 
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
 
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -25,6 +39,7 @@ import me.ecruise.data.Station;
 public class Map2Activity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private Button mConfirmButton;
     private ArrayList<Marker> markers = new ArrayList<>();
     private static final LatLng centralPos = new LatLng(49.487155, 8.466219);
 
@@ -39,6 +54,12 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.mapFragment);
+        mConfirmButton = (Button) findViewById(R.id.bookButton);
+        mConfirmButton.setVisibility(View.INVISIBLE);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar2);
+        setSupportActionBar(toolbar);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         mapFragment.getMapAsync(this);
 
     }
@@ -53,6 +74,10 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
         CameraPosition cp = new CameraPosition.Builder().target(centralPos).zoom(13).build();
         CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
         mMap.moveCamera(cu);
+
+        final MarkerOptions markerOptions = new MarkerOptions().position(new LatLng(0,0)).title("Gewählte Position").snippet("selectedPosition");
+        final Marker bookingPosition = mMap.addMarker(markerOptions);
+
         if (Map.getInstance(this.getApplicationContext()).getShowStations()) {
             Map.getInstance(this.getApplicationContext()).getStationsFromServer(new Customer.DataCallback() {
                 @Override
@@ -92,6 +117,81 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
         }
+        if (Map.getInstance(this.getApplicationContext()).isGetLocation())
+        {
+            mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+
+                @Override
+                public void onMapClick(LatLng point) {
+                    // TODO Auto-generated method stub
+                    bookingPosition.setPosition(point);
+                }
+            });
+
+
+            mConfirmButton.setVisibility(View.VISIBLE);
+            mConfirmButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(bookingPosition.getPosition().latitude != 0 && bookingPosition.getPosition().longitude != 0)
+                    {
+                        response(true, bookingPosition.getPosition());
+                    }
+                    else
+                    {
+                        noPosAlert();
+                    }
+                }
+            });
+        }
+        else
+        {
+            mConfirmButton.setVisibility(View.INVISIBLE);
+        }
+        PlaceAutocompleteFragment autocompleteFragment = (PlaceAutocompleteFragment)
+                getFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                // TODO: Get info about the selected place.
+                bookingPosition.setPosition(place.getLatLng());
+            }
+
+            @Override
+            public void onError(Status status) {
+                // TODO: Handle the error.
+
+            }
+        });
+    }
+
+    private void noPosAlert()
+    {
+        Log.d("Alert", "Failure");
+        AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(this);
+        dlgAlert.setMessage("Keine Position gewählt, tippen sie auf die Karte um eine Position zu wählen!");
+        dlgAlert.setTitle("Hinweis");
+        dlgAlert.setPositiveButton("Ok",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        //dismiss the dialog
+                    }
+                });
+        dlgAlert.setCancelable(true);
+        dlgAlert.create().show();
+    }
+
+    private void response(boolean success, LatLng position)
+    {
+        Intent resultData = new Intent();
+        resultData.putExtra("longitude", position.longitude);
+        resultData.putExtra("latitude", position.latitude);
+        if(success)
+            setResult(Activity.RESULT_OK, resultData);
+        else
+            setResult(Activity.RESULT_CANCELED, resultData);
+        finish();
     }
 
     /**

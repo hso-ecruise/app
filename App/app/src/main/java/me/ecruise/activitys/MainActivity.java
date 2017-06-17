@@ -1,7 +1,9 @@
 package me.ecruise.activitys;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutCompat;
 import android.support.v7.widget.Toolbar;
@@ -130,12 +132,27 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
             case R.id.notifications:
                 return true;
             case R.id.logout:
-                Customer.getInstance(this.getApplicationContext()).logout();
+                logout();
                 return true;
 
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    /**
+     * logs the user out
+     */
+    public void logout() {
+        Log.d("Logout", "Main");
+        SharedPreferences savedLogin =  PreferenceManager.getDefaultSharedPreferences((this.getApplicationContext()));
+        SharedPreferences.Editor editor = savedLogin.edit();
+        editor.putInt("userId", 0);
+        editor.putString("token", "");
+        // Commit the edits!
+        editor.commit();
+        Intent intent = new Intent(this , LoginActivity.class);
+        startActivity(intent);
     }
 
     /**

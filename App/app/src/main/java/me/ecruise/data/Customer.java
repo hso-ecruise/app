@@ -341,8 +341,6 @@ public class Customer {
                                 mCallback.onFailure();
                             } else {
                                 Log.d("PATCH_SUCCESS", response.getString("id"));
-                                if(mUrl.contains("password"))
-                                    Customer.getInstance(mCtx).logout();
                                 mCallback.onSuccess(mUrl);
                             }
                         } catch (JSONException e) {
@@ -456,22 +454,8 @@ public class Customer {
                         mCallback.onFailure();
                     }
                 }) {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<>();
-                params.put("access_token", mToken);
-                return params;
-            }
         };
         Server.getInstance(mCtx).addToRequestQueue(jsObjRequest);
-    }
-
-    /**
-     * logs the user out
-     */
-    public void logout() {
-        Intent intent = new Intent(mCtx, LoginActivity.class);
-        mCtx.startActivity(intent);
     }
 
     public int getId() {

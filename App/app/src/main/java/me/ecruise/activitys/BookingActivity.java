@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 
+import me.ecruise.data.Booking;
 import me.ecruise.data.Customer;
 import me.ecruise.data.Server;
 
@@ -69,7 +70,8 @@ public class BookingActivity extends AppCompatActivity implements
         mMapButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startMap();
+                if (validateSelectedDateAndTime())
+                    startMap();
             }
         });
 
@@ -85,7 +87,8 @@ public class BookingActivity extends AppCompatActivity implements
                         mGoogleApiClient.connect();
                     } else {
                         Log.d("Box", "not checked");
-                        // manual location
+                        startMap();
+
                     }
                 } else {
                     failureAlert();
@@ -151,6 +154,16 @@ public class BookingActivity extends AppCompatActivity implements
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    Intent data) {
+        if (requestCode == 0) {
+            if (resultCode == RESULT_OK) {
+                postBooking(data.getDoubleExtra("latitude", 0), data.getDoubleExtra("longitude", 0));
+            }
+        }
+    }
+
     /**
      * Validates the selected Date and Time
      * @return true if the date is at least 30min in the future
@@ -167,8 +180,9 @@ public class BookingActivity extends AppCompatActivity implements
      * Starts a new Map Activity where the location can be chosen
      */
     private void startMap() {
-        Intent intent = new Intent(this, Map2Activity.class);
-        startActivity(intent);
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setGetLocation(true);
+        Intent intent = new Intent(BookingActivity.this, Map2Activity.class);
+        startActivityForResult(intent, 0);
     }
 
     @Override
@@ -249,7 +263,7 @@ public class BookingActivity extends AppCompatActivity implements
      * @param lat latitude of the booked position
      * @param lng longitude of the booked position
      */
-    private void postBooking(double lat, double lng) {
+    public void postBooking(double lat, double lng) {
         final String mToken = Customer.getInstance(this.getApplicationContext()).getToken();
         Log.d("Post", "booking");
         int id = Customer.getInstance(this.getApplicationContext()).getId();
@@ -276,6 +290,7 @@ public class BookingActivity extends AppCompatActivity implements
                     @Override
                     public void onResponse(JSONObject response) {
                         Log.d("Response", response.toString());
+                        successAlert();
                     }
                 }, new Response.ErrorListener() {
 

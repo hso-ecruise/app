@@ -72,6 +72,15 @@ public class Map {
     private boolean showStations = false;
     private boolean showBookedCar = false;
     private boolean showAllCars = false;
+
+    public boolean isGetLocation() {
+        return getLocation;
+    }
+
+    public void setGetLocation(boolean getLocation) {
+        this.getLocation = getLocation;
+    }
+
     private boolean getLocation = false;
 
     /**
