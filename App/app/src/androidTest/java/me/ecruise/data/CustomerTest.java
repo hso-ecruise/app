@@ -32,15 +32,10 @@ public class CustomerTest {
 
     @Test
     public void getInstance() throws Exception {
-        Customer testCustomer = null;
-        testCustomer = Customer.getInstance(null);
-        assertNull(testCustomer);
-        testCustomer = Customer.getInstance(appContext);
-        assertNotNull(testCustomer);
-        testCustomer = Customer.getInstance(null);
-        assertNotNull(testCustomer);
-        testCustomer = Customer.getInstance(appContext);
-        assertNotNull(testCustomer);
+        assertNull(Customer.getInstance(null));
+        assertNotNull(Customer.getInstance(appContext));
+        assertNotNull(Customer.getInstance(null));
+        assertNotNull(Customer.getInstance(appContext));
     }
 
 
@@ -108,15 +103,15 @@ public class CustomerTest {
     public void updateUserData() throws Exception {
         Customer testCustomer1 = new Customer(appContext);
         Customer testCustomer2 = new Customer(appContext);
-        Customer.DataCallback callback = new Customer.DataCallback() {
+        Customer.DataAnswerCallback callback = new Customer.DataAnswerCallback() {
             @Override
-            public void onSuccess() {
-                assertTrue(true);
+            public void onSuccess(String answer) {
+
             }
 
             @Override
             public void onFailure() {
-                assertTrue(false);
+
             }
         };
 
@@ -144,21 +139,38 @@ public class CustomerTest {
         testCustomer2.setStreet("street");
         testCustomer2.setZipCode(77777);
 
-        //testCustomer1.updateUserData(testCustomer2, callback);
+        assertFalse(testCustomer1.updateUserData(testCustomer2, callback));
 
         testCustomer2.setName("newName");
-        testCustomer2.setLastname("newLastName");
-        testCustomer2.setCountry("newCountry");
-        testCustomer2.setExtraAddressLine("new");
-        testCustomer2.setHouseNumber("2");
-        testCustomer2.setCity("newCity");
-        testCustomer2.setEmail("newEmail");
+        assertTrue(testCustomer1.updateUserData(testCustomer2, callback));
+
         testCustomer2.setPassword("newPassword");
         testCustomer2.setPhoneNumber("5678");
-        testCustomer2.setStreet("newStreet");
-        testCustomer2.setZipCode(88888);
+        testCustomer2.setEmail("newEmail");
+        assertTrue(testCustomer1.updateUserData(testCustomer2, callback));
 
-        //testCustomer1.updateUserData(testCustomer2, callback);
+        testCustomer2.setCountry("newCountry");
+        assertTrue(testCustomer1.updateUserData(testCustomer2, callback));
+
+        testCustomer2.setCountry("country");
+        testCustomer2.setHouseNumber("2");
+        assertTrue(testCustomer1.updateUserData(testCustomer2, callback));
+
+        testCustomer2.setHouseNumber("1");
+        testCustomer2.setExtraAddressLine("new");
+        assertTrue(testCustomer1.updateUserData(testCustomer2, callback));
+
+        testCustomer2.setExtraAddressLine("extra");
+        testCustomer2.setZipCode(88888);
+        assertTrue(testCustomer1.updateUserData(testCustomer2, callback));
+
+        testCustomer2.setZipCode(77777);
+        testCustomer2.setCity("newCity");
+        assertTrue(testCustomer1.updateUserData(testCustomer2, callback));
+
+        testCustomer2.setCity("city");
+        testCustomer2.setStreet("newStreet");
+        assertTrue(testCustomer1.updateUserData(testCustomer2, callback));
     }
 
     @Test

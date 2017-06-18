@@ -18,23 +18,21 @@ public class NFCReader implements IScanDevice
     private NfcAdapter nfcAdapter;
     private Intent intent;
 
-    public NFCReader(Context context)
+    public NFCReader(Context context) throws NoSuchElementException
     {
         nfcAdapter = NfcAdapter.getDefaultAdapter(context);
         if (nfcAdapter == null)
         {
-            Logger.getInstance().log("Dieses Gerät unterstützt kein NFC");
-            throw new NoSuchElementException("No NFC found on this device");
+            throw new NoSuchElementException("No NFC-Reader found on this device");
         }
         if (!nfcAdapter.isEnabled())
         {
-            Logger.getInstance().log("Auf diesem Gerät ist NFC ausgeschaltet");
             throw new NoSuchElementException("No NFC enabled on this device");
         }
     }
 
     @Override
-    public String scanUserId()
+    public String scanChipCardUid()
     {
         if (intent == null)
             throw new IllegalStateException("Check isReady() before calling this method");
@@ -82,6 +80,8 @@ public class NFCReader implements IScanDevice
         return false;
     }
 
+    // this method checks if the the device is now going to scan the chip
+    // and it will store the intent, which is needed for scanning
     public boolean isReady(Intent intent)
     {
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction()) ||

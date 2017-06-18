@@ -2,7 +2,10 @@ package me.ecruise.activitys;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -14,9 +17,6 @@ import android.widget.TabHost;
 
 import me.ecruise.data.Customer;
 
-/**
- *
- */
 public class AccountManagementActivity extends AppCompatActivity{
 
     LinearLayout login;
@@ -37,14 +37,11 @@ public class AccountManagementActivity extends AppCompatActivity{
     private EditText mCityText;
     private EditText mCountryText;
 
-    /**
-     *
-     */
     public AccountManagementActivity(){
     }
 
     /**
-     *
+     * Methon for initialisation
      * @param savedInstanceState
      */
     @Override
@@ -84,8 +81,6 @@ public class AccountManagementActivity extends AppCompatActivity{
         setSupportActionBar(toolbar);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-
 
         Button mConfirmButton = (Button) findViewById(R.id.confirmButton);
         mConfirmButton.setOnClickListener(new View.OnClickListener() {
@@ -136,7 +131,7 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
+     *  Called when the confirm button is pressed
      */
     private void confirm(){
         if (validateTextEdits())
@@ -157,8 +152,9 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
-     * @return
+     * checks if the user-input is valid
+     * also sets error-infos for the user
+     * @return true if everything is ok
      */
     public boolean validateTextEdits()
     {
@@ -196,7 +192,7 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
+     * communicates with the Customer Object to update the data
      * @param newCustomerData
      */
     private void patchUserData(Customer newCustomerData) {
@@ -213,7 +209,8 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
+     * Creates a positiv Info-Alert
+     * @param answer the Answer from the Servercall, contains the name of the changed field
      */
     private void successAlert(String answer)
     {
@@ -221,13 +218,12 @@ public class AccountManagementActivity extends AppCompatActivity{
         AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(this);
         String message = "Folgende Daten wurden erfolgreich geändert: ";
         if(answer.contains("address"))
-            message = message + "Adresse";
+            message = message + "Adresse\n";
         if(answer.contains("phone"))
-            message = message + "Telefonnummer";
+            message = message + "Telefonnummer\n";
         if(answer.contains("email"))
-            message = message + "Email";
-        if(answer.contains("password"))
-            message = message + "Passwort";
+            message = message + "Email\n";
+
         dlgAlert.setMessage(message);
         dlgAlert.setPositiveButton("Ok",
                 new DialogInterface.OnClickListener() {
@@ -237,10 +233,38 @@ public class AccountManagementActivity extends AppCompatActivity{
                 });
         dlgAlert.setCancelable(true);
         dlgAlert.create().show();
+
+        if(answer.contains("password"))
+        {
+            message = "Passwort wurde geändert, Sie werden ausgeloggt.\n Bitte mit dem neuen Passwort einloggen.";
+            dlgAlert.setMessage(message);
+            dlgAlert.setPositiveButton("Ok",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            //dismiss the dialog
+                            logout();
+                        }
+                    });
+            dlgAlert.setCancelable(false);
+            dlgAlert.create().show();
+        }
+    }
+
+    private void logout()
+    {
+        SharedPreferences savedLogin = PreferenceManager.getDefaultSharedPreferences((this.getApplicationContext()));
+        SharedPreferences.Editor editor = savedLogin.edit();
+        Log.d("Logout", "AccMan");
+        editor.putInt("userId", 0);
+        editor.putString("token", "");
+        // Commit the edits!
+        editor.commit();
+        Intent intent = new Intent(this , LoginActivity.class);
+        startActivity(intent);
     }
 
     /**
-     *
+     * Creates an error Alert
      */
     private void failureAlert()
     {
@@ -259,8 +283,8 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
-     * @return
+     * Reads the Data from the User-Input and stores it in an Costumer Object
+     * @return the new Customer
      */
     private Customer readUserData(){
         Customer customer = new Customer(this.getApplicationContext());
@@ -279,7 +303,8 @@ public class AccountManagementActivity extends AppCompatActivity{
     }
 
     /**
-     *
+     * Initializes the Text in the input fields.
+     * Uses the Instance of the Singleton Customer
      */
     private void initializeTextEdits(){
         mNameText.setText(Customer.getInstance(this.getApplicationContext()).getName());

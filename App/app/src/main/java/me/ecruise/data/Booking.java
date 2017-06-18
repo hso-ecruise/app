@@ -22,6 +22,14 @@ public class Booking extends Button {
     private LatLng bookedPos;
     private LatLng carPos;
 
+    public LatLng getCarPos() {
+        return carPos;
+    }
+
+    public void setCarPos(LatLng carPos) {
+        this.carPos = carPos;
+    }
+
     public int getID() {
         return ID;
     }
@@ -72,13 +80,15 @@ public class Booking extends Button {
      * @param ID
      * @param carID
      * @param plannedDateString
+     * @param bookedPos
      */
-    public Booking(Context context, int ID, int carID, String plannedDateString) {
+    public Booking(Context context, int ID, int carID, String plannedDateString, LatLng bookedPos) {
         super(context);
         this.ID = ID;
         this.carID = carID;
         this.plannedDateString = plannedDateString;
-        this.setText("Buchung Nr." + ID + "\n" + plannedDateString + "\n" + carID + "");
+        this.setText("Buchung Nr." + ID + "\n" + plannedDateString);
+        this.setBookedPos(bookedPos);
     }
 
 }

@@ -1,13 +1,17 @@
 package ecruise.logic;
 
-import android.content.Context;
 import ecruise.data.IScanDevice;
-import ecruise.data.NFCReader;
 import ecruise.data.Server;
+import org.json.JSONException;
+
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Tom on 21.03.2017.
  */
+// This class is a mapping for BookingState and ChargingState to the ScanLED
+// it will also change in the event of scanning a Card
+// the ScanLED accesses the Server and the NFCReader to calculate its own state
 public class ScanLED
 {
     private IScanDevice scanDevice;
@@ -19,10 +23,11 @@ public class ScanLED
 
     public ColorCode calculateColorCode()
     {
+        String chipCardId = scanDevice.scanChipCardUid();
         switch (new StatusLED().calculateCarState())
         {
             case BOOKED_FULL:
-                if (Server.getConnection().checkID(scanDevice.scanUserId()))
+                if (Server.getConnection().checkID(chipCardId))
                 {
                     return ColorCode.GREEN;
                 }
@@ -31,7 +36,7 @@ public class ScanLED
                     return ColorCode.RED;
                 }
             case BOOKED_CHARGING:
-                if (Server.getConnection().checkID(scanDevice.scanUserId()))
+                if (Server.getConnection().checkID(chipCardId))
                 {
                     return ColorCode.YELLOW;
                 }
@@ -40,9 +45,15 @@ public class ScanLED
                     return ColorCode.RED;
                 }
             case AVAILABLE_CHARGING:
-                return ColorCode.YELLOW;
+                if (Server.getConnection().checkIDExists(chipCardId))
+                    return ColorCode.YELLOW;
+                else
+                    return ColorCode.RED;
             case AVAILABLE_FULL:
-                return ColorCode.GREEN;
+                if (Server.getConnection().startTrip(chipCardId))
+                    return ColorCode.GREEN;
+                else
+                    return ColorCode.RED;
             case BLOCKED:
                 return ColorCode.RED;
         }

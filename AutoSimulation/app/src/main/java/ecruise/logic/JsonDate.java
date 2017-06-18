@@ -11,6 +11,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+// Helper class for transforming the date string in json format to a Java Calendar
 public class JsonDate
 {
     private String jsonDateString;

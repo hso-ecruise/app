@@ -26,6 +26,11 @@ public class Map {
     private static Context mCtx;
     private ArrayList<Station> stations = new ArrayList<>();
     private ArrayList<Car> cars = new ArrayList<>();
+    private boolean showStations = false;
+    private boolean showBookedCar = false;
+    private boolean showAllCars = false;
+    private LatLng bookedPos;
+    private int bookedCarId = 0;
 
     public int getBookedCarId() {
         return bookedCarId;
@@ -35,7 +40,7 @@ public class Map {
         this.bookedCarId = bookedCarId;
     }
 
-    private int bookedCarId;
+
 
     public boolean getShowStations() {
         return showStations;
@@ -69,9 +74,23 @@ public class Map {
         return cars;
     }
 
-    private boolean showStations = false;
-    private boolean showBookedCar = false;
-    private boolean showAllCars = false;
+
+    public LatLng getBookedPos() {
+        return bookedPos;
+    }
+
+    public void setBookedPos(LatLng bookedPos) {
+        this.bookedPos = bookedPos;
+    }
+
+    public boolean isGetLocation() {
+        return getLocation;
+    }
+
+    public void setGetLocation(boolean getLocation) {
+        this.getLocation = getLocation;
+    }
+
     private boolean getLocation = false;
 
     /**

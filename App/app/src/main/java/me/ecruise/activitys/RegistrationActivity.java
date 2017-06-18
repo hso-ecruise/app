@@ -29,6 +29,10 @@ public class RegistrationActivity extends AppCompatActivity {
     private EditText mHousenumber;
     private EditText mExtraAddressline;
 
+    /**
+     * initializes the activity
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,18 +43,46 @@ public class RegistrationActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mNameText = (EditText) findViewById(R.id.nameText);
+        if (mNameText == null)
+            Log.d("mNameText", "null");
         mLastnameText = (EditText) findViewById(R.id.lastnameText);
+        if (mLastnameText == null)
+            Log.d("mLastnameText", "null");
         mEmailText = (EditText) findViewById(R.id.emailText);
+        if (mEmailText == null)
+            Log.d("mEmailText", "null");
         mEmailText2 = (EditText) findViewById(R.id.emailText2);
+        if (mEmailText2 == null)
+            Log.d("mEmailText2", "null");
         mPasswordText = (EditText) findViewById(R.id.passwordText);
+        if (mPasswordText == null)
+            Log.d("mPasswordText", "null");
         mPasswordText2 = (EditText) findViewById(R.id.passwordText2);
+        if (mPasswordText2 == null)
+            Log.d("mPasswordText2", "null");
         mPhoneNumber = (EditText) findViewById(R.id.phoneNumberText);
+        if (mPhoneNumber == null)
+            Log.d("mPhoneNumber", "null");
         mCountry = (EditText) findViewById(R.id.countryText);
+        if (mCountry == null)
+            Log.d("mCountry", "null");
         mCity = (EditText) findViewById(R.id.cityText);
+        if (mCity == null)
+            Log.d("mCity", "null");
         mZipCode = (EditText) findViewById(R.id.zipCodeText);
+        if (mZipCode == null)
+            Log.d("mZipCode", "null");
         mStreet = (EditText) findViewById(R.id.streetText);
-        mHousenumber = (EditText) findViewById(R.id.houseNumberText);
+        if (mStreet == null)
+            Log.d("mStreet", "null");
+        mHousenumber = (EditText) findViewById(R.id.housenumberText);
+        if (mHousenumber == null)
+            Log.d("mHousenumber", "null");
         mExtraAddressline = (EditText) findViewById(R.id.extraAddressLineText);
+        if (mExtraAddressline == null)
+            Log.d("mExtraAddressline", "null");
+
+
 
         Button mRegistrationButton = (Button) findViewById(R.id.registrationButton);
         mRegistrationButton.setOnClickListener(new View.OnClickListener() {
@@ -61,6 +93,9 @@ public class RegistrationActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Creates a new Customer with the User-Input and posts it to the server
+     */
     public void confirm() {
         if (validateTextEdits()) {
             Customer.getInstance(this.getApplicationContext()).setName(mNameText.getText().toString());
@@ -91,6 +126,9 @@ public class RegistrationActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Creates a positiv Info-Alert
+     */
     private void successAlert() {
         Log.d("Alert", "Success");
         AlertDialog.Builder dlgAlert = new AlertDialog.Builder(this);
@@ -105,6 +143,9 @@ public class RegistrationActivity extends AppCompatActivity {
         dlgAlert.create().show();
     }
 
+    /**
+     * Creates an Error-Alert
+     */
     private void failureAlert() {
         Log.d("Alert", "Failure");
         AlertDialog.Builder dlgAlert = new AlertDialog.Builder(this);
@@ -120,6 +161,11 @@ public class RegistrationActivity extends AppCompatActivity {
         dlgAlert.create().show();
     }
 
+    /**
+     * checks if the user-input is valid
+     * also sets error-infos for the user
+     * @return true if everything is ok
+     */
     public boolean validateTextEdits() {
         if (mNameText.getText().toString().isEmpty()) {
             mNameText.setError("Pflichtfeld");

@@ -45,7 +45,6 @@ public class Customer {
     }
 
     /**
-     *
      * @param context
      * @return
      */
@@ -158,9 +157,9 @@ public class Customer {
     private boolean countryChanged = false;
 
     /**
-     *
+     * checks if there is a difference to the newCustomer
      * @param newCustomer
-     * @return
+     * @return if there are changes
      */
     public boolean checkForChanges(Customer newCustomer) {
         nameChanged = !newCustomer.name.isEmpty() && !this.name.equals(newCustomer.name);
@@ -189,8 +188,8 @@ public class Customer {
     }
 
     /**
-     *
-     * @param callback
+     * gets the user data from the server
+     * @param callback to wait for the server communication
      */
     public void getUserDataFromServer(DataCallback callback) {
         final DataCallback mCallback = callback;
@@ -223,7 +222,7 @@ public class Customer {
     }
 
     /**
-     *
+     * saves the response in the singleton customer
      * @param response
      */
     public void setUserData(JSONObject response) {
@@ -243,7 +242,11 @@ public class Customer {
         }
     }
 
-    public void updateUserData(Customer customer, DataAnswerCallback callback) {
+    /**
+     * updates the user data
+     * @return
+     */
+    public boolean updateUserData(Customer customer, DataAnswerCallback callback) {
         boolean updated = checkForChanges(customer);
         if (updated) {
             String url;
@@ -310,6 +313,7 @@ public class Customer {
             callback.onFailure();
         }
         Log.d("RETURN", Boolean.toString(updated));
+        return updated;
     }
 
     /**
@@ -337,8 +341,6 @@ public class Customer {
                                 mCallback.onFailure();
                             } else {
                                 Log.d("PATCH_SUCCESS", response.getString("id"));
-                                if(mUrl.contains("password"))
-                                    Customer.getInstance(mCtx).logout();
                                 mCallback.onSuccess(mUrl);
                             }
                         } catch (JSONException e) {
@@ -452,22 +454,8 @@ public class Customer {
                         mCallback.onFailure();
                     }
                 }) {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<>();
-                params.put("access_token", mToken);
-                return params;
-            }
         };
         Server.getInstance(mCtx).addToRequestQueue(jsObjRequest);
-    }
-
-    /**
-     *
-     */
-    public void logout() {
-        Intent intent = new Intent(mCtx, LoginActivity.class);
-        mCtx.startActivity(intent);
     }
 
     public int getId() {
