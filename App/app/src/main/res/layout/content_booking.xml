@@ -64,37 +64,6 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.06" />
 
-        <TextView
-            android:id="@+id/textView15"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.06"
-            android:text="Startpunkt:"
-            android:textSize="18sp" />
-
-        <EditText
-            android:id="@+id/streetText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ems="10"
-            android:focusable="false"
-            android:hint="Straße"
-            android:inputType="text" />
-
-        <EditText
-            android:id="@+id/cityText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ems="10"
-            android:focusable="false"
-            android:hint="Ort"
-            android:inputType="text" />
-
-        <Space
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.06" />
-
         <CheckBox
             android:id="@+id/autoGpsBox"
             android:layout_width="match_parent"

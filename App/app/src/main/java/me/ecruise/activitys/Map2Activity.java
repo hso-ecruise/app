@@ -105,17 +105,11 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
             });
         }
         if (Map.getInstance(this.getApplicationContext()).getShowBookedCar()) {
-            Map.getInstance(this.getApplicationContext()).getCarsFromServer(new Customer.DataCallback() {
-                @Override
-                public void onSuccess() {
-                    showBookedCarMarker();
-                }
+            if(Map.getInstance(this.getApplicationContext()).getBookedCarId() != 0)
+                showBookedCarMarker();
+            else
+                showBookedPositionMarker();
 
-                @Override
-                public void onFailure() {
-
-                }
-            });
         }
         if (Map.getInstance(this.getApplicationContext()).isGetLocation())
         {
@@ -232,6 +226,13 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
             }
 
         }
+    }
+
+    /**
+     * shows Marker for the booked Position on the map
+     */
+    private void showBookedPositionMarker() {
+        createMarker("Buchung", Map.getInstance(null).getBookedPos(), "Buchung" );
     }
 
     /**

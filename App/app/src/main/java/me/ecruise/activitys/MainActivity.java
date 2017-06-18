@@ -22,6 +22,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -86,13 +87,13 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
-     * starts a new MapActivity which shows the booked car
-     * @param booking
+     * starts a new MapActivity which shows the booked car or the booked position
+     * @param bookedPos
      */
-    private void startBookedCarMap(Booking booking) {
-
+    private void startBookedCarMap(LatLng bookedPos) {
         Intent intent = new Intent(this, Map2Activity.class);
         me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowBookedCar(true);
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setBookedPos(bookedPos);
         startActivity(intent);
     }
 
@@ -201,20 +202,63 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         for (int i = 0; i < bookings.length(); i++) {
             final Booking bookingButton;
             try {
-                bookingButton = new Booking(this.getApplicationContext(), bookings.getJSONObject(i).getInt("bookingId"), 0, bookings.getJSONObject(i).getString("plannedDate"));
+                final LatLng bookedPosition = new LatLng(bookings.getJSONObject(i).getDouble("bookingPositionLatitude"), bookings.getJSONObject(i).getDouble("bookingPositionLongitude"));
+                bookingButton = new Booking(this.getApplicationContext(), bookings.getJSONObject(i).getInt("bookingId"), 0, bookings.getJSONObject(i).getString("plannedDate"), bookedPosition);
                 ll.addView(bookingButton, lp);
                 bookingButton.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
-
-                        startBookedCarMap(bookingButton);
+                        startBookedCarMap(bookedPosition);
                     }
                 });
+                try {
+                    if(bookings.getJSONObject(i).getInt("tripId") != 0)
+                    {
+                        getCar(bookings.getJSONObject(i).getInt("tripId"));
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
         }
+    }
+
+    public void getCar(int tripId)
+    {
+        final String mToken = Customer.getInstance(this.getApplicationContext()).getToken();
+        String url = "https://api.ecruise.me/v1/trips/" + tripId;
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
+                    int carId;
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            carId = response.getInt("carId");
+                            me.ecruise.data.Map.getInstance(null).setBookedCarId(carId);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // TODO Auto-generated method stub
+
+                    }
 
 
+                }) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+                params.put("access_token", mToken);
+                return params;
+            }
+        };
+        Server.getInstance(this.getApplicationContext()).addToRequestQueue(jsonObjectRequest);
     }
 }
