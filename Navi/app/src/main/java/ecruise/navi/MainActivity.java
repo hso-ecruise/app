@@ -1,5 +1,6 @@
 package ecruise.navi;
 
+import android.app.Application;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
@@ -9,6 +10,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import com.android.volley.Request;
+import com.android.volley.toolbox.RequestFuture;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -22,12 +25,14 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -35,6 +40,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import ecruise.common.DataParser;
+import ecruise.common.JsonStringRequest;
+import ecruise.common.Server;
 import ecruise.common.ServerRequest;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback
@@ -227,11 +234,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View view)
             {
-                centerMarker();
+                try {
+                    centerMarker();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
-
     @Override
     public void onMapReady(GoogleMap googleMap)
     {
@@ -242,9 +252,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      *  This executes on "Zentrieren" button click and actulize the map with
      *  data received from server. Also car simulation will be executed.
      **/
-    private void centerMarker()
+    private void centerMarker() throws JSONException
     {
-        requestServer();
+        login();
 
         drawRoute();
 
@@ -414,14 +424,34 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    private void login()
+    {
+        ServerRequest login = new ServerRequest(this.getApplicationContext(), "");
+        login.getToken(
+                new ServerRequest.VolleyCallbackObject()
+                {
+                    @Override
+                    public void onSuccess(JSONObject result)
+                    {
+                        try
+                        {
+                            requestServer(result.getString("token"));
+                        }
+                        catch (Exception e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+    }
 
 
     /**
     *  This method create Requests to server on the specified URL
     **/
-    private void requestServer()
+    private void requestServer(String token) throws JSONException
     {
-        ServerRequest sr = new ServerRequest(this.getApplicationContext());
+        ServerRequest sr = new ServerRequest(this.getApplicationContext(), token);
         sr.generateJsonArray("https://api.ecruise.me/v1/charging-stations",
                 new ServerRequest.VolleyCallbackArray()
                 {
@@ -430,6 +460,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     {
                         try
                         {
+                            Log.d("INITIATING ALL STATIONS", "");
                             initAllStations(result);
                         }
                         catch (Exception e)
@@ -439,7 +470,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 });
 
-        ServerRequest sr2 = new ServerRequest(this.getApplicationContext());
+        ServerRequest sr2 = new ServerRequest(this.getApplicationContext(), token);
         sr2.generateJsonArray("https://api.ecruise.me/v1/cars",
                 new ServerRequest.VolleyCallbackArray()
                 {
@@ -448,6 +479,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     {
                         try
                         {
+                            Log.d("INITIATING ALL CARS", "");
                             initAllCars(result);
                         }
                         catch (Exception e)
