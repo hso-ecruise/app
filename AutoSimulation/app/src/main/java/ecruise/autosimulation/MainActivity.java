@@ -1,21 +1,26 @@
 package ecruise.autosimulation;
 
+import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.widget.*;
 import ecruise.data.NFCReader;
+import ecruise.data.OnFinishedHandler;
 import ecruise.data.Server;
 import ecruise.data.ServerConnection;
-import ecruise.logic.*;
+import ecruise.logic.Car;
+import ecruise.logic.ColorCode;
+import ecruise.logic.Logger;
 
 import java.security.InvalidParameterException;
 import java.util.NoSuchElementException;
@@ -24,43 +29,48 @@ import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity
 {
-    private ScanLED scanLED;
-    private StatusLED statusLED;
+    private Car car;
     private NFCReader nfcReader;
 
     private Timer statusTimer = new Timer();
 
-    // polls the color of the status LED
+    // polls the color of the status LED and updates Position if necessary
     public Handler updateHandler = new Handler()
     {
         public void handleMessage(Message msg)
         {
             Log.d("MainActivity", "update Status");
-            setStatusColorCode(statusLED.calculateColorCode());
+            car.getStatusLedColorCode((colorCode) ->
+            {
+                setStatusColorCode(colorCode);
+            });
+            car.updatePositionToPausingPostion((success) ->
+            {
+            });
         }
     };
 
     public MainActivity()
     {
         // output of the logger goes to a textview in this activity
-        Logger.getInstance().addListener(new ILogListener()
+        Logger.getInstance().addListener(text -> runOnUiThread(() ->
         {
-            @Override
-            public void log(String text)
+            TextView log = (TextView) findViewById(R.id.log);
+            // new line should not appear first time
+            if (log.getText().length() > 0)
             {
-                TextView log = (TextView) findViewById(R.id.log);
-                log.append("\n" + android.text.format.DateFormat.format("HH:mm:ss: ", new java.util.Date()) + text);
-
-                final ScrollView scroll = (ScrollView) findViewById(R.id.scroll);
-                scroll.post(new Runnable()
-                {
-                    public void run()
-                    {
-                        scroll.fullScroll(View.FOCUS_DOWN);
-                    }
-                });
+                log.append("\n");
             }
-        });
+            log.append(android.text.format.DateFormat.format("HH:mm:ss: ", new java.util.Date()) + text);
+
+            final ScrollView scroll = (ScrollView) findViewById(R.id.scroll);
+            boolean autoScroll = ((CheckBox) findViewById(R.id.checkBoxAutoscroll)).isChecked();
+            if (autoScroll)
+            {
+                scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
+            }
+            Log.d("LOGGER", text);
+        }));
     }
 
     @Override
@@ -68,67 +78,111 @@ public class MainActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        try
+
+        alertAskForCarId((carId) ->
         {
-            Server.setConnection(new ServerConnection(getApplicationContext()));
-            nfcReader = new NFCReader(getApplicationContext());
-        }
-        catch (NoSuchElementException | InvalidParameterException e)
-        {
-            e.printStackTrace();
-            Logger.getInstance().log(e.getMessage());
-            setInfoText(getResources().getString(R.string.internal_error));
-            setStatusText(getResources().getString(R.string.internal_error));
-            return;
-        }
+            if (carId == null)
+            {
+                setStatusColorCode(ColorCode.RED);
+                return;
+            }
+
+            Server.setConnection(new ServerConnection(getApplicationContext(), (success) ->
+            {
+                if (success)
+                {
+                    try
+                    {
+                        nfcReader = new NFCReader(getApplicationContext());
+                        car = new Car(carId, nfcReader);
+
+                        statusTimer.scheduleAtFixedRate(new TimerTask()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                updateHandler.obtainMessage(1).sendToTarget();
+                            }
+                        }, 100, 10000);
+
+                        setInfoText(getResources().getString(R.string.prompt_info));
+                    }
+                    catch (NoSuchElementException | InvalidParameterException e)
+                    {
+                        setStatusColorCode(ColorCode.RED);
+                        return;
+                    }
+                }
+                else
+                {
+                    setStatusColorCode(ColorCode.RED);
+                    return;
+                }
+            }));
+        });
 
 
         // during a trip to end the trip
-        Button button = (Button) findViewById(R.id.buttonEndTrip);
-        button.setOnClickListener(new View.OnClickListener()
+        final Button buttonEndTrip = (Button) findViewById(R.id.buttonEndTrip);
+        buttonEndTrip.setOnClickListener(v ->
         {
-            @Override
-            public void onClick(View v)
+            car.endTrip((success) ->
             {
-                EditText editText = (EditText) findViewById(R.id.editTextDistanceTravelled);
-                int distanceTravelled = Integer.parseInt(editText.getText().toString());
-                editText = (EditText) findViewById(R.id.editTextEndChargingStation);
-                int endChargingStationId = Integer.parseInt(editText.getText().toString());
+                if (success)
+                {
+                    LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutTrip);
+                    linearLayout.setVisibility(View.GONE);
+                    setInfoText(getResources().getString(R.string.prompt_info));
 
-                Server.getConnection().endTrip(distanceTravelled, endChargingStationId);
+                    // If trip ended successfully update state immediately
+                    updateHandler.obtainMessage(1).sendToTarget();
+                }
+            });
 
-                LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutTrip);
-                linearLayout.setVisibility(View.GONE);
-            }
         });
 
-        scanLED = new ScanLED(nfcReader);
-        statusLED = new StatusLED();
-
-        statusTimer.scheduleAtFixedRate(new TimerTask()
+        // during a trip to pause the trip
+        final Button buttonPause = (Button) findViewById(R.id.buttonPause);
+        buttonPause.setOnClickListener(v ->
         {
-            @Override
-            public void run()
-            {
-                updateHandler.obtainMessage(1).sendToTarget();
-            }
-        }, 5000, 10000);
+            car.pause();
+            buttonPause.setEnabled(false);
+            buttonEndTrip.setEnabled(false);
+            LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutTrip);
+            linearLayout.setVisibility(View.GONE);
+            setInfoText(getResources().getString(R.string.prompt_info));
+        });
     }
 
-    @Override
-    // is needed for real NFC-Reader to work
-    protected void onResume()
+    private void alertAskForCarId(OnFinishedHandler<Integer> onFinishedHandler)
     {
-        super.onResume();
-        nfcReader.onResume(this);
-    }
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this);
+        alertDialog.setTitle("Setup");
+        alertDialog.setMessage("Welches Auto soll für die Simulation verwendet werden? Geben Sie bitte die Auto-ID ein.");
 
-    @Override
-    // is needed for real NFC-Reader to work
-    protected void onPause()
-    {
-        super.onPause();
-        nfcReader.onPause(this);
+        final EditText input = new EditText(MainActivity.this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT);
+        input.setLayoutParams(lp);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        alertDialog.setView(input);
+
+        alertDialog.setPositiveButton("Verbinden",
+                (dialog, which) ->
+                {
+                    try
+                    {
+                        int carId = Integer.parseInt(input.getText().toString());
+                        onFinishedHandler.handle(carId);
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        onFinishedHandler.handle(null);
+                    }
+                });
+
+        alertDialog.show();
     }
 
     @Override
@@ -136,42 +190,65 @@ public class MainActivity extends AppCompatActivity
     {
         if (nfcReader.isReady(intent))
         {
-            handleScan();
+            handleScan((colorCode) ->
+            {
+                // If scanned update state immediately
+                updateHandler.obtainMessage(1).sendToTarget();
+            });
         }
     }
 
-    private ColorCode handleScan()
+    private void handleScan(OnFinishedHandler<ColorCode> onFinishedHandler)
     {
-        ColorCode result = scanLED.calculateColorCode();
-        blinkScanLED(colorsFromColorCode(result));
-        setInfoText(getResources().getString(R.string.scanned));
-
-        if (result == ColorCode.GREEN)
+        car.scanNfc((colorCode) ->
         {
-            setStatusColorCode(ColorCode.OFF);
-            setStatusText(getResources().getString(R.string.discarging));
-            LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutTrip);
-            linearLayout.setVisibility(View.VISIBLE);
-        }
-        return result;
+            if (colorCode == null)
+            {
+                blinkScanLED(colorsFromColorCode(ColorCode.RED));
+                onFinishedHandler.handle(null);
+                return;
+            }
+
+            if (colorCode != ColorCode.OFF)
+            {
+                blinkScanLED(colorsFromColorCode(colorCode));
+            }
+
+            if (colorCode == ColorCode.GREEN)
+            {
+                setStatusColorCode(ColorCode.OFF);
+                setStatusText(getResources().getString(R.string.driving));
+                setInfoText(getResources().getString(R.string.while_driving_info));
+                LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutTrip);
+                linearLayout.setVisibility(View.VISIBLE);
+                findViewById(R.id.buttonPause).setEnabled(true);
+                findViewById(R.id.buttonEndTrip).setEnabled(true);
+            }
+            onFinishedHandler.handle(colorCode);
+        });
     }
 
     private int colorsFromColorCode(ColorCode colorCode)
     {
+        if (colorCode == null)
+        {
+            return getColorFromResource(R.color.codeOff);
+        }
+
         switch (colorCode)
         {
             case RED:
-                return Color.parseColor(getResources().getString(R.color.codeRed));
+                return getColorFromResource(R.color.codeRed);
             case YELLOW:
-                return Color.parseColor(getResources().getString(R.color.codeYellow));
+                return getColorFromResource(R.color.codeYellow);
             case GREEN:
-                return Color.parseColor(getResources().getString(R.color.codeGreen));
+                return getColorFromResource(R.color.codeGreen);
             case BLUE:
-                return Color.parseColor(getResources().getString(R.color.codeBlue));
+                return getColorFromResource(R.color.codeBlue);
             case OFF:
-                return Color.parseColor(getResources().getString(R.color.codeOff));
+                return getColorFromResource(R.color.codeOff);
         }
-        return 0;
+        return getColorFromResource(R.color.codeError);
     }
 
     private void setInfoText(String infoText)
@@ -189,6 +266,13 @@ public class MainActivity extends AppCompatActivity
     private void setStatusColorCode(ColorCode state)
     {
         setStatusLEDColor(colorsFromColorCode(state));
+
+        if (state == null)
+        {
+            setStatusText(getResources().getString(R.string.disconnected));
+            return;
+        }
+
         switch (state)
         {
             case RED:
@@ -204,7 +288,7 @@ public class MainActivity extends AppCompatActivity
                 setStatusText(getResources().getString(R.string.booked));
                 break;
             case OFF:
-                setStatusText(getResources().getString(R.string.diconnected));
+                setStatusText(getResources().getString(R.string.disconnected));
                 break;
         }
     }
@@ -228,12 +312,15 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onAnimationStart(Animation animation)
             {
-
+                findViewById(R.id.infoText).setVisibility(View.GONE);
+                findViewById(R.id.scanInfoText).setVisibility(View.VISIBLE);
             }
 
             public void onAnimationEnd(Animation animation)
             {
                 led.setAlpha(0.0f);
+                findViewById(R.id.infoText).setVisibility(View.VISIBLE);
+                findViewById(R.id.scanInfoText).setVisibility(View.GONE);
             }
 
             @Override
@@ -247,5 +334,10 @@ public class MainActivity extends AppCompatActivity
         anim.setDuration(100);
         anim.setStartOffset(20);
         led.startAnimation(anim);
+    }
+
+    private int getColorFromResource(int id)
+    {
+        return ContextCompat.getColor(getApplicationContext(), id);
     }
 }

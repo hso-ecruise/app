@@ -2,9 +2,6 @@ package ecruise.logic;
 
 import ecruise.data.IScanDevice;
 import ecruise.data.Server;
-import org.json.JSONException;
-
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Tom on 21.03.2017.
@@ -12,48 +9,25 @@ import java.util.concurrent.ExecutionException;
 // This class is a mapping for BookingState and ChargingState to the ScanLED
 // it will also change in the event of scanning a Card
 // the ScanLED accesses the Server and the NFCReader to calculate its own state
-public class ScanLED
+class ScanLED
 {
-    private IScanDevice scanDevice;
-
-    public ScanLED(IScanDevice scanDevice)
+    ColorCode getColorCode(CarState carState, boolean hasBooked)
     {
-        this.scanDevice = scanDevice;
-    }
-
-    public ColorCode calculateColorCode()
-    {
-        String chipCardId = scanDevice.scanChipCardUid();
-        switch (new StatusLED().calculateCarState())
+        switch (carState)
         {
-            case BOOKED_FULL:
-                if (Server.getConnection().checkID(chipCardId))
+            case BOOKED:
+                if (hasBooked)
                 {
                     return ColorCode.GREEN;
-                }
-                else
-                {
-                    return ColorCode.RED;
-                }
-            case BOOKED_CHARGING:
-                if (Server.getConnection().checkID(chipCardId))
-                {
-                    return ColorCode.YELLOW;
                 }
                 else
                 {
                     return ColorCode.RED;
                 }
             case AVAILABLE_CHARGING:
-                if (Server.getConnection().checkIDExists(chipCardId))
-                    return ColorCode.YELLOW;
-                else
-                    return ColorCode.RED;
+                return ColorCode.YELLOW;
             case AVAILABLE_FULL:
-                if (Server.getConnection().startTrip(chipCardId))
-                    return ColorCode.GREEN;
-                else
-                    return ColorCode.RED;
+                return ColorCode.GREEN;
             case BLOCKED:
                 return ColorCode.RED;
         }
