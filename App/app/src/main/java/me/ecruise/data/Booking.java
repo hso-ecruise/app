@@ -1,12 +1,22 @@
 package me.ecruise.data;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.gms.maps.model.LatLng;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Created by Jens Ullrich on 30.05.2017.
@@ -15,6 +25,7 @@ import java.util.Date;
 public class Booking extends Button {
     private int ID;
     private int carID;
+    private int tripID;
     private Date bookingDate;
     private Date plannedDate;
     private String bookingDateString;
@@ -22,6 +33,13 @@ public class Booking extends Button {
     private LatLng bookedPos;
     private LatLng carPos;
 
+    public int getTripID() {
+        return tripID;
+    }
+
+    public void setTripID(int tripID) {
+        this.tripID = tripID;
+    }
     public LatLng getCarPos() {
         return carPos;
     }
@@ -78,17 +96,14 @@ public class Booking extends Button {
      *
      * @param context
      * @param ID
-     * @param carID
      * @param plannedDateString
      * @param bookedPos
      */
-    public Booking(Context context, int ID, int carID, String plannedDateString, LatLng bookedPos) {
+    public Booking(Context context, int ID, String plannedDateString, LatLng bookedPos) {
         super(context);
         this.ID = ID;
-        this.carID = carID;
         this.plannedDateString = plannedDateString;
         this.setText("Buchung Nr." + ID + "\n" + plannedDateString);
         this.setBookedPos(bookedPos);
     }
-
 }

@@ -97,29 +97,32 @@ public class PullBooking extends Service {
                                 int tripId = booking.getInt("tripId");
                                 String plannedDate = booking.getString("plannedDate");
 
+                                Log.d("plannedDate:", plannedDate);
+
                                 JsonDate date = null;
                                 try {
                                     date = new JsonDate(plannedDate);
-                                } catch (ParseException e) {
-                                    e.printStackTrace();
-                                }
 
-                                // only if trip is in future
-                                if (date.getCalendar().after(Calendar.getInstance())) {
-                                    // the whole booking is new
-                                    if (recievedBookings.get(bookingId, -1) == -1) {
-                                        Log.d("Backgroundservice", "New Booking with ID " + bookingId);
 
-                                        if (tripId != 0)
-                                            isNewTripAssigned = true;
+                                    // only if trip is in future
+                                    if (date.getCalendar().after(Calendar.getInstance())) {
+                                        // the whole booking is new
+                                        if (recievedBookings.get(bookingId, -1) == -1) {
+                                            Log.d("Backgroundservice", "New Booking with ID " + bookingId);
 
-                                        recievedBookings.append(bookingId, tripId);
-                                    } else {
-                                        // the trip id has changed since last check
-                                        if (recievedBookings.get(bookingId) != tripId) {
-                                            isNewTripAssigned = true;
+                                            if (tripId != 0)
+                                                isNewTripAssigned = true;
+
+                                            recievedBookings.append(bookingId, tripId);
+                                        } else {
+                                            // the trip id has changed since last check
+                                            if (recievedBookings.get(bookingId) != tripId) {
+                                                isNewTripAssigned = true;
+                                            }
                                         }
                                     }
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
                                 }
                             }
 

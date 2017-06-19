@@ -284,7 +284,7 @@ public class BookingActivity extends AppCompatActivity implements
             e.printStackTrace();
         }
         Log.d("reqObj", reqObj.toString());
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest
+        final JsonObjectRequest jsObjRequest = new JsonObjectRequest
                 (Request.Method.POST, url, reqObj, new Response.Listener<JSONObject>() {
 
                     @Override
@@ -308,7 +308,23 @@ public class BookingActivity extends AppCompatActivity implements
                 return params;
             }
         };
-        Server.getInstance(this.getApplicationContext()).addToRequestQueue(jsObjRequest);
+        AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(this);
+        String message = "Jetzt verbindlich Buchen?";
+        dlgAlert.setMessage(message);
+        dlgAlert.setPositiveButton("Ja",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        //dismiss the dialog
+                        Server.getInstance(null).addToRequestQueue(jsObjRequest);
+                    }
+                });
+        dlgAlert.setNegativeButton("Nein",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        //dismiss the dialog
+                    }
+                });
+        dlgAlert.create().show();
     }
 }
 

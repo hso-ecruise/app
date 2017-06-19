@@ -1,6 +1,7 @@
 package me.ecruise.data;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 
 import com.android.volley.AuthFailureError;
@@ -26,11 +27,20 @@ public class Map {
     private static Context mCtx;
     private ArrayList<Station> stations = new ArrayList<>();
     private ArrayList<Car> cars = new ArrayList<>();
+    private ArrayList<Car> allCars = new ArrayList<>();
     private boolean showStations = false;
     private boolean showBookedCar = false;
     private boolean showAllCars = false;
     private LatLng bookedPos;
     private int bookedCarId = 0;
+
+    public ArrayList<Car> getAllCars() {
+        return allCars;
+    }
+
+    public void setAllCars(ArrayList<Car> allCars) {
+        this.allCars = allCars;
+    }
 
     public int getBookedCarId() {
         return bookedCarId;
@@ -39,7 +49,6 @@ public class Map {
     public void setBookedCarId(int bookedCarId) {
         this.bookedCarId = bookedCarId;
     }
-
 
 
     public boolean getShowStations() {
@@ -94,7 +103,6 @@ public class Map {
     private boolean getLocation = false;
 
     /**
-     *
      * @param ctx
      * @return
      */
@@ -107,7 +115,6 @@ public class Map {
     }
 
     /**
-     *
      * @param callback
      */
     public void getStationsFromServer(Customer.DataCallback callback) {
@@ -140,7 +147,6 @@ public class Map {
     }
 
     /**
-     *
      * @param callback
      */
     public void getCarsFromServer(Customer.DataCallback callback) {
@@ -173,7 +179,6 @@ public class Map {
     }
 
     /**
-     *
      * @param array
      * @param callback
      */
@@ -187,9 +192,9 @@ public class Map {
                 int id = array.getJSONObject(i).getInt("chargingStationId");
                 int slots = array.getJSONObject(i).getInt("slots");
                 int slotsOccupied = array.getJSONObject(i).getInt("slotsOccupied");
-                if(slots > slotsOccupied)
+                if (slots > slotsOccupied)
                     free = true;
-                station = new Station (id, pos, free, slots, slotsOccupied);
+                station = new Station(id, pos, free, slots, slotsOccupied);
                 stations.add(station);
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -199,7 +204,6 @@ public class Map {
     }
 
     /**
-     *
      * @param array
      * @param callback
      */
@@ -209,15 +213,19 @@ public class Map {
             Car car;
             try {
                 boolean available = (array.getJSONObject(i).getInt("bookingState") == 1);
-                if(available)
-                {
-                    int id = array.getJSONObject(i).getInt("carId");
-                    LatLng pos = new LatLng(array.getJSONObject(i).getDouble("lastKnownPositionLatitude"), array.getJSONObject(i).getDouble("lastKnownPositionLongitude"));
-                    boolean full = (array.getJSONObject(i).getInt("chargingState") == 3);
 
-                    int chargingLevel = array.getJSONObject(i).getInt("chargeLevel");
-                    String name = "Auto";
-                    car = new Car (id, pos, full, available, chargingLevel, name);
+                int id = array.getJSONObject(i).getInt("carId");
+                LatLng pos = new LatLng(array.getJSONObject(i).getDouble("lastKnownPositionLatitude"), array.getJSONObject(i).getDouble("lastKnownPositionLongitude"));
+                boolean full = (array.getJSONObject(i).getInt("chargingState") == 3);
+
+                int chargingLevel = array.getJSONObject(i).getInt("chargeLevel");
+                String name = "Auto";
+                car = new Car(id, pos, full, available, chargingLevel, name);
+                car.setPlate(array.getJSONObject(i).getString("licensePlate"));
+                Log.d("ADD", "allCars");
+                allCars.add(car);
+                if (available) {
+                    Log.d("ADD", "cars");
                     cars.add(car);
                 }
             } catch (JSONException e) {

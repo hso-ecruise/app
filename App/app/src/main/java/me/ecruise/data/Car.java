@@ -1,6 +1,7 @@
 package me.ecruise.data;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.StreetViewPanoramaCamera;
 
 /**
  * Created by Jens Ullrich on 07.06.2017.
@@ -13,6 +14,7 @@ public class Car {
     private int id;
     private int chargingLevel;
     private String name;
+    private String plate;
 
     public Car(int id, LatLng pos, boolean full, boolean available, int chargingLevel, String name) {
         this.setId(id);
@@ -82,5 +84,13 @@ public class Car {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setPlate(String plate) {
+        this.plate = plate;
+    }
+
+    public String getPlate() {
+        return plate;
     }
 }
