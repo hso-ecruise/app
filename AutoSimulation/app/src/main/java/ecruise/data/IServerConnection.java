@@ -20,6 +20,9 @@ public interface IServerConnection
     // Handler returns success, false if error
     void updateChargingState(int carId, ChargingState chargingState, OnFinishedHandler<Boolean> onFinishedHandler);
 
+    // Handler returns success, false if error
+    void updateChargeLevel(int carId, double chargeLevel, OnFinishedHandler<Boolean> onFinishedHandler);
+
     // Handler returns success, or false if invalid or error (never null)
     void validId(String chipCardUid, OnFinishedHandler<Boolean> onFinishedHandler);
 

@@ -1,10 +1,8 @@
 package ecruise.logic;
 
 import ecruise.data.*;
-import org.json.JSONException;
 
-import java.text.ParseException;
-import java.util.concurrent.ExecutionException;
+import java.util.Random;
 
 /**
  * Created by Tom on 17.06.2017.
@@ -50,23 +48,28 @@ public class Car
                 return;
             }
 
-            Server.getConnection().updatePosition(CAR_ID, 49.485133, 8.463558, (success) ->
+            Server.getConnection().updatePosition(CAR_ID, 49.485133, 8.463558, (successPosition) ->
             {
-                if (success)
-                {
-                    driving = false;
-                    onFinishedHandler.handle(true);
-                    return;
-                }
-                else
+                if (!successPosition)
                 {
                     onFinishedHandler.handle(false);
                     return;
                 }
+
+                int chargingLevel = new Random().nextInt((90 - 30) + 1) + 30;
+                Server.getConnection().updateChargeLevel(CAR_ID, chargingLevel, (successChargeLevel) ->
+                {
+                    if (!successChargeLevel)
+                    {
+                        onFinishedHandler.handle(false);
+                        return;
+                    }
+
+                    driving = false;
+                    onFinishedHandler.handle(true);
+                    return;
+                });
             });
-
-
-            onFinishedHandler.handle(true);
         });
     }
 

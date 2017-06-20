@@ -7,7 +7,7 @@
     <string name="nfc_wainting_info">Nfc nicht bereit…</string>
     <string name="while_driving_info"> </string>
 
-    <string name="not_available">nicht verfügbar</string>
+    <string name="not_available">blockiert</string>
     <string name="later_available">Laden…\ndanach verfügbar</string>
     <string name="booked">gebucht</string>
     <string name="available">verfügbar</string>

@@ -14,6 +14,7 @@ import ecruise.logic.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONStringer;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
@@ -212,12 +213,13 @@ public class ServerConnection implements IServerConnection
                 {
                     response = future.get();
                     patchedCarId = response.getInt("id");
-                    Logger.getInstance().log("ChargingState patched to " + param);
+                    Logger.getInstance().log("Patched ChargingState to " + param);
                     return true;
                 }
                 catch (InterruptedException | ExecutionException | JSONException e)
                 {
                     e.printStackTrace();
+                    Logger.getInstance().log("Could not Patch ChargingState (Error)");
                     return false;
                 }
             }, onFinishedHandler, patch);
@@ -369,7 +371,7 @@ public class ServerConnection implements IServerConnection
                 {
                     result = future.get(); // this will block
                     patchedTripId = result.getInt("id");
-                    Logger.getInstance().log("Trip ended with ID " + patchedTripId);
+                    Logger.getInstance().log("Patched trip " + patchedTripId + " to end");
 
                     return patchedTripId;
                 }
@@ -413,16 +415,56 @@ public class ServerConnection implements IServerConnection
             try
             {
                 JSONObject result = future.get();
-                Logger.getInstance().log("Position request replied");
+                Logger.getInstance().log("Patched Position to " + Double.toString((double) param[1]) + "N " + Double.toString((double) param[2]) + "E");
             }
             catch (InterruptedException | ExecutionException e)
             {
                 e.printStackTrace();
+                Logger.getInstance().log("Could not patch Position (Error)");
                 return false;
             }
 
             return true;
         }, onFinishedHandler, new Object[]{carId, latitude, longitude});
+    }
+
+    @Override
+    public void updateChargeLevel(int carId, double chargeLevel, OnFinishedHandler<Boolean> onFinishedHandler)
+    {
+        ParametricThread<Boolean, Object[]> thread = new ParametricThread<>((param) ->
+        {
+            String url = "https://api.ecruise.me/v1/cars/" + Integer.toString((int) param[0]) + "/chargelevel";
+
+            String patchString = "\"" + Double.toString((double) param[1]) + "\"";
+
+            RequestFuture<JSONObject> future = RequestFuture.newFuture();
+            JsonStringRequest jsonObjectRequest = new JsonStringRequest
+                    (Request.Method.PATCH, url, patchString, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+            request(jsonObjectRequest);
+
+            try
+            {
+                JSONObject result = future.get();
+                Logger.getInstance().log("Patched ChargeLevel to " + Double.toString((double) param[1]) + "%");
+            }
+            catch (InterruptedException | ExecutionException e)
+            {
+                e.printStackTrace();
+                Logger.getInstance().log("Could not patch ChargeLevel (Error)");
+                return false;
+            }
+
+            return true;
+        }, onFinishedHandler, new Object[]{carId, chargeLevel});
     }
 
     @Override
