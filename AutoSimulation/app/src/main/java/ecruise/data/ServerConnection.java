@@ -14,7 +14,6 @@ import ecruise.logic.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONStringer;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
@@ -470,14 +469,12 @@ public class ServerConnection implements IServerConnection
     @Override
     public void hasPositionRequest(int carId, OnFinishedHandler<Boolean> onFinishedHandler)
     {
-        // TODO: Implement when Backend is ready
-
         ParametricThread<Boolean, Integer> thread = new ParametricThread<>((param) ->
         {
-            String url = "https://api.ecruise.me/v1/" + param;
+            String url = "https://api.ecruise.me/v1/cars/" + param + "/is-wanted";
 
             RequestFuture<JSONObject> future = RequestFuture.newFuture();
-            JsonObjectRequest jsonArrayRequest = new JsonObjectRequest
+            StatusRequest jsonArrayRequest = new StatusRequest
                     (Request.Method.GET, url, null, future, future)
             {
                 @Override
@@ -495,11 +492,18 @@ public class ServerConnection implements IServerConnection
             try
             {
                 positionRequest = future.get();
-                boolean hasOne = positionRequest.getBoolean("hasOne");
-                Logger.getInstance().log("Get Position request: " + hasOne);
-                return hasOne;
+                String code = positionRequest.getString("code");
+
+                if(code.equals("200"))
+                {
+                    Logger.getInstance().log("Get Position request: " + code);
+                    return true;
+                }
+
+                Logger.getInstance().log("No Position request: " + code);
+                return true;
             }
-            catch (JSONException | InterruptedException | ExecutionException e)
+            catch (InterruptedException | ExecutionException | JSONException e)
             {
                 e.printStackTrace();
             }
