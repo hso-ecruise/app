@@ -501,7 +501,7 @@ public class ServerConnection implements IServerConnection
                 }
 
                 Logger.getInstance().log("No Position request: " + code);
-                return true;
+                return false;
             }
             catch (InterruptedException | ExecutionException | JSONException e)
             {
