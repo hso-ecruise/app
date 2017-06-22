@@ -27,10 +27,10 @@ public interface IServerConnection
     void validId(String chipCardUid, OnFinishedHandler<Boolean> onFinishedHandler);
 
     // Handler returns tripId of the newly created trip, or null if error
-    void createTrip(String chipCardUid, int carId, int startChargingStationId, OnFinishedHandler<Integer> onFinishedHandler);
+    void createTrip(String chipCardUid, int carId, OnFinishedHandler<Integer> onFinishedHandler);
 
     // Handler returns tripId of the ended trip, or null if error
-    void endTrip(int tripId, int distanceTravelled, int endChargingStationId, OnFinishedHandler<Integer> onFinishedHandler);
+    void endTrip(int carId, int tripId, int distanceTravelled, OnFinishedHandler<Integer> onFinishedHandler);
 
     // Handler returns success, also false if error (never null)
     void updatePosition(int carId, double latitude, double longitude, OnFinishedHandler<Boolean> onFinishedHandler);

@@ -7,6 +7,7 @@
     <color name="colorBackground">#FFFFFF</color>
     <color name="codeRed">#c04740</color>
     <color name="codeYellow">#ffeb00</color>
+    <color name="codeYellowDimmed">#b8ad2c</color>
     <color name="codeBlue">#3f96c2</color>
     <color name="codeGreen">#96c23f</color>
     <color name="codeOff">#000000</color>

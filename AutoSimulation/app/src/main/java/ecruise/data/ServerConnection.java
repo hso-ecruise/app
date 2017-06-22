@@ -5,20 +5,19 @@ import android.util.Log;
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.RequestFuture;
-import com.android.volley.toolbox.Volley;
+import com.android.volley.toolbox.*;
 import ecruise.logic.JsonDate;
 import ecruise.logic.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -36,9 +35,17 @@ public class ServerConnection implements IServerConnection
 
     private RequestQueue requestQueue;
 
-    private <T> void request(final Request<T> req)
+    private void request(final JsonRequest req)
     {
-        Logger.getInstance().log(req.toString());
+        if (req.getBody() != null)
+        {
+            Logger.getInstance().log("\u25B2" + req.getUrl().substring(22)
+                    + " \uD83D\uDCE6" + new String(req.getBody(), StandardCharsets.UTF_8));
+        }
+        else
+        {
+            Logger.getInstance().log("\u25B2" + req.getUrl().substring(22) + " \uD83D\uDCE6\u2205");
+        }
         requestQueue.add(req);
     }
 
@@ -161,7 +168,7 @@ public class ServerConnection implements IServerConnection
                             }
                             else
                             {
-                                Logger.getInstance().log("ChipCardUid not right Customer");
+                                Logger.getInstance().logInfo("ChipCardUid not right Customer");
                                 onFinishedHandler.handle(null);
                                 return;
                             }
@@ -212,13 +219,13 @@ public class ServerConnection implements IServerConnection
                 {
                     response = future.get();
                     patchedCarId = response.getInt("id");
-                    Logger.getInstance().log("Patched ChargingState to " + param);
+                    Logger.getInstance().logInfo("Patched ChargingState to " + param);
                     return true;
                 }
                 catch (InterruptedException | ExecutionException | JSONException e)
                 {
                     e.printStackTrace();
-                    Logger.getInstance().log("Could not Patch ChargingState (Error)");
+                    Logger.getInstance().logError("Could not Patch ChargingState");
                     return false;
                 }
             }, onFinishedHandler, patch);
@@ -252,7 +259,7 @@ public class ServerConnection implements IServerConnection
     }
 
     @Override
-    public void createTrip(String chipCardUid, int carId, int startChargingStationId, OnFinishedHandler<Integer> onFinishedHandler)
+    public void createTrip(String chipCardUid, int carId, OnFinishedHandler<Integer> onFinishedHandler)
     {
         getCustomerIdFromChipCardUid(chipCardUid, (result) ->
         {
@@ -264,130 +271,163 @@ public class ServerConnection implements IServerConnection
 
             JSONObject trip = new JSONObject();
 
-            try
+            getCarChargingStation(carId, (carChargingStation) ->
             {
-                trip.put("tripId", 0);
-                trip.put("carId", carId);
-                trip.put("customerId", result);
-                trip.put("startDate", new JsonDate(Calendar.getInstance()).getString());
-                trip.put("endDate", null);
-                trip.put("startChargingStationId", startChargingStationId);
-                trip.put("endChargingStationId", null);
-                trip.put("distanceTravelled", null);
-
-                ParametricThread<Integer, JSONObject> thread = new ParametricThread<>((param) ->
+                try
                 {
-                    String url = "https://api.ecruise.me/v1/trips";
+                    trip.put("tripId", null);
+                    trip.put("carId", carId);
+                    trip.put("customerId", result);
+                    trip.put("startDate", new JsonDate(Calendar.getInstance()).getString());
+                    trip.put("endDate", null);
 
-                    RequestFuture<JSONObject> tripFuture = RequestFuture.newFuture();
-                    JsonObjectRequest jsonTripObjectRequest = new JsonObjectRequest
-                            (Request.Method.POST, url, param, tripFuture, tripFuture)
+                    if (carChargingStation == null)
                     {
-                        @Override
-                        public Map<String, String> getHeaders() throws AuthFailureError
+                        Logger.getInstance().logWarning("startChargingStation is " + 1);
+                        trip.put("startChargingStationId", 1);
+                    }
+                    else
+                    {
+                        Logger.getInstance().logInfo("startChargingStation is " +
+                                carChargingStation.getInt("chargingStationId"));
+                        trip.put("startChargingStationId", carChargingStation.getInt("chargingStationId"));
+                    }
+
+                    trip.put("endChargingStationId", null);
+                    trip.put("distanceTravelled", null);
+
+                    ParametricThread<Integer, JSONObject> thread = new ParametricThread<>((param) ->
+                    {
+                        String url = "https://api.ecruise.me/v1/trips";
+
+                        RequestFuture<JSONObject> tripFuture = RequestFuture.newFuture();
+                        JsonObjectRequest jsonTripObjectRequest = new JsonObjectRequest
+                                (Request.Method.POST, url, param, tripFuture, tripFuture)
                         {
-                            Map<String, String> params = new HashMap<>();
-                            params.put("access_token", accessToken);
-                            return params;
+                            @Override
+                            public Map<String, String> getHeaders() throws AuthFailureError
+                            {
+                                Map<String, String> params = new HashMap<>();
+                                params.put("access_token", accessToken);
+                                return params;
+                            }
+                        };
+                        request(jsonTripObjectRequest);
+
+                        JSONObject tripResponse = null;
+                        int tripId = -1;
+                        try
+                        {
+                            tripResponse = tripFuture.get();
+                            tripId = tripResponse.getInt("id");
+                            Logger.getInstance().logInfo("Trip created with ID " + tripId);
                         }
-                    };
-                    request(jsonTripObjectRequest);
-
-                    JSONObject tripResponse = null;
-                    int tripId = -1;
-                    try
+                        catch (InterruptedException | ExecutionException | JSONException e)
+                        {
+                            e.printStackTrace();
+                            Logger.getInstance().logError("Trip not created");
+                            return null;
+                        }
+                        return tripId == -1 ? null : tripId;
+                    }, (tripId) ->
                     {
-                        tripResponse = tripFuture.get();
-                        tripId = tripResponse.getInt("id");
-                        Logger.getInstance().log("Trip created with ID " + tripId);
-                    }
-                    catch (InterruptedException | ExecutionException | JSONException e)
-                    {
-                        e.printStackTrace();
-                        Logger.getInstance().log("Trip not created (Error)");
-                        return null;
-                    }
-                    return tripId == -1 ? null : tripId;
-                }, (tripId) ->
-                {
-                    if (tripId == null)
-                    {
-                        onFinishedHandler.handle(null);
-                        return;
-                    }
-
-                    createBooking(result, tripId, (bookingId) ->
-                    {
-                        if (bookingId == null)
+                        if (tripId == null)
                         {
                             onFinishedHandler.handle(null);
                             return;
                         }
-                        onFinishedHandler.handle(tripId);
-                    });
 
-                }, trip);
-            }
-            catch (JSONException e)
-            {
-                e.printStackTrace();
-                onFinishedHandler.handle(null);
-                return;
-            }
+                        createBooking(result, tripId, (bookingId) ->
+                        {
+                            if (bookingId == null)
+                            {
+                                onFinishedHandler.handle(null);
+                                return;
+                            }
+                            onFinishedHandler.handle(tripId);
+                        });
+
+                    }, trip);
+                }
+                catch (JSONException e)
+                {
+                    e.printStackTrace();
+                    onFinishedHandler.handle(null);
+                    return;
+                }
+            });
         });
     }
 
     @Override
-    public void endTrip(int tripId, int distanceTravelled, int endChargingStationId, OnFinishedHandler<Integer> onFinishedHandler)
+    public void endTrip(int carId, int tripId, int distanceTravelled, OnFinishedHandler<Integer> onFinishedHandler)
     {
-        ParametricThread<Integer, int[]> thread = new ParametricThread<>((param) ->
+
+        getRandomFreeChargingStation((chargingStation) ->
         {
-            String url = "https://api.ecruise.me/v1/trips/" + param[0];
 
-            JSONObject patch = new JSONObject();
-            try
+            if (chargingStation != null)
             {
-                patch.put("DistanceTravelled", param[1]);
-                patch.put("EndChargingStationId", param[2]);
-
-                RequestFuture<JSONObject> future = RequestFuture.newFuture();
-                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                        (Request.Method.PATCH, url, patch, future, future)
+                ParametricThread<Integer, int[]> thread = new ParametricThread<>((param) ->
                 {
-                    @Override
-                    public Map<String, String> getHeaders() throws AuthFailureError
+
+                    String url = "https://api.ecruise.me/v1/trips/" + param[1];
+
+                    JSONObject patch = new JSONObject();
+                    try
                     {
-                        Map<String, String> params = new HashMap<>();
-                        params.put("access_token", accessToken);
-                        return params;
+                        patch.put("DistanceTravelled", param[2]);
+                        patch.put("EndChargingStationId", chargingStation.getInt("chargingStationId"));
+
+                        RequestFuture<JSONObject> future = RequestFuture.newFuture();
+                        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                                (Request.Method.PATCH, url, patch, future, future)
+                        {
+                            @Override
+                            public Map<String, String> getHeaders() throws AuthFailureError
+                            {
+                                Map<String, String> params = new HashMap<>();
+                                params.put("access_token", accessToken);
+                                return params;
+                            }
+                        };
+                        request(jsonObjectRequest);
+
+                        JSONObject result = null;
+                        int patchedTripId = -1;
+                        try
+                        {
+                            result = future.get(); // this will block
+                            patchedTripId = result.getInt("id");
+                            Logger.getInstance().logInfo("Patched trip " + patchedTripId + " to end");
+
+                            updatePosition(param[0], chargingStation.getDouble("latitude"),
+                                    chargingStation.getDouble("longitude"), (success) ->
+                                    {
+                                    });
+
+                            return patchedTripId;
+                        }
+                        catch (InterruptedException | JSONException | ExecutionException e)
+                        {
+                            e.printStackTrace();
+                            Logger.getInstance().logError("Trip not ended with ID " + param[0]);
+                            return null;
+                        }
                     }
-                };
-                request(jsonObjectRequest);
-
-                JSONObject result = null;
-                int patchedTripId = -1;
-                try
-                {
-                    result = future.get(); // this will block
-                    patchedTripId = result.getInt("id");
-                    Logger.getInstance().log("Patched trip " + patchedTripId + " to end");
-
-                    return patchedTripId;
-                }
-                catch (InterruptedException | JSONException | ExecutionException e)
-                {
-                    e.printStackTrace();
-                    Logger.getInstance().log("Trip not ended with ID " + param[0] + " (Error)");
-                    return null;
-                }
+                    catch (JSONException e)
+                    {
+                        e.printStackTrace();
+                        Logger.getInstance().logError("Trip not ended with ID " + param[0]);
+                        return null;
+                    }
+                }, onFinishedHandler, new int[]{carId, tripId, distanceTravelled});
             }
-            catch (JSONException e)
+            else
             {
-                e.printStackTrace();
-                Logger.getInstance().log("Trip not ended with ID " + param[0] + " (Error)");
-                return null;
+                onFinishedHandler.handle(null);
             }
-        }, onFinishedHandler, new int[]{tripId, distanceTravelled, endChargingStationId});
+        });
     }
 
     @Override
@@ -395,7 +435,8 @@ public class ServerConnection implements IServerConnection
     {
         ParametricThread<Boolean, Object[]> thread = new ParametricThread<>((param) ->
         {
-            String url = "https://api.ecruise.me/v1/cars/" + Integer.toString((int) param[0]) + "/position/" + Double.toString((double) param[1]) + "/" + Double.toString((double) param[2]);
+            String url = "https://api.ecruise.me/v1/cars/" + Integer.toString((int) param[0]) + "/position/"
+                    + Double.toString((double) param[1]) + "/" + Double.toString((double) param[2]);
 
             RequestFuture<JSONObject> future = RequestFuture.newFuture();
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
@@ -414,12 +455,13 @@ public class ServerConnection implements IServerConnection
             try
             {
                 JSONObject result = future.get();
-                Logger.getInstance().log("Patched Position to " + Double.toString((double) param[1]) + "N " + Double.toString((double) param[2]) + "E");
+                Logger.getInstance().logInfo("Patched Position to " + Double.toString((double) param[1])
+                        + "N " + Double.toString((double) param[2]) + "E");
             }
             catch (InterruptedException | ExecutionException e)
             {
                 e.printStackTrace();
-                Logger.getInstance().log("Could not patch Position (Error)");
+                Logger.getInstance().logError("Could not patch Position");
                 return false;
             }
 
@@ -453,12 +495,12 @@ public class ServerConnection implements IServerConnection
             try
             {
                 JSONObject result = future.get();
-                Logger.getInstance().log("Patched ChargeLevel to " + Double.toString((double) param[1]) + "%");
+                Logger.getInstance().logInfo("Patched ChargeLevel to " + Double.toString((double) param[1]) + "%");
             }
             catch (InterruptedException | ExecutionException e)
             {
                 e.printStackTrace();
-                Logger.getInstance().log("Could not patch ChargeLevel (Error)");
+                Logger.getInstance().logError("Could not patch ChargeLevel");
                 return false;
             }
 
@@ -474,7 +516,7 @@ public class ServerConnection implements IServerConnection
             String url = "https://api.ecruise.me/v1/cars/" + param + "/is-wanted";
 
             RequestFuture<JSONObject> future = RequestFuture.newFuture();
-            StatusRequest jsonArrayRequest = new StatusRequest
+            StatusRequest statusRequest = new StatusRequest
                     (Request.Method.GET, url, null, future, future)
             {
                 @Override
@@ -486,7 +528,7 @@ public class ServerConnection implements IServerConnection
                 }
             };
 
-            request(jsonArrayRequest);
+            request(statusRequest);
 
             JSONObject positionRequest = null;
             try
@@ -494,20 +536,20 @@ public class ServerConnection implements IServerConnection
                 positionRequest = future.get();
                 String code = positionRequest.getString("code");
 
-                if(code.equals("200"))
+                if (code.equals("200"))
                 {
-                    Logger.getInstance().log("Get Position request: " + code);
+                    Logger.getInstance().logInfo("is-wanted: " + code);
                     return true;
                 }
 
-                Logger.getInstance().log("No Position request: " + code);
+                Logger.getInstance().logInfo("not is-wanted: " + code);
                 return false;
             }
             catch (InterruptedException | ExecutionException | JSONException e)
             {
                 e.printStackTrace();
             }
-            Logger.getInstance().log("Can't ask for position request (Error)");
+            Logger.getInstance().logError("Can't ask for position request");
             return false;
         }, onFinishedHandler, carId);
     }
@@ -519,19 +561,9 @@ public class ServerConnection implements IServerConnection
             String url = "https://api.ecruise.me/v1/public/login/" + AUTH_EMAIL;
             String stringRequest = "\"" + AUTH_PASSWORD + "\"";
             RequestFuture<JSONObject> future = RequestFuture.newFuture();
-            JsonStringRequest jsObjRequest = new JsonStringRequest(url, stringRequest, future, future);
+            JsonStringRequest jsonStringRequest = new JsonStringRequest(url, stringRequest, future, future);
 
-            String value = null;
-            try
-            {
-                value = new String(jsObjRequest.getBody(), "UTF-8");
-            }
-            catch (UnsupportedEncodingException e)
-            {
-                e.printStackTrace();
-            }
-
-            request(jsObjRequest);
+            request(jsonStringRequest);
 
             try
             {
@@ -543,10 +575,10 @@ public class ServerConnection implements IServerConnection
             catch (ExecutionException | JSONException | InterruptedException | TimeoutException e1)
             {
                 e1.printStackTrace();
-                Logger.getInstance().log("Authentication failure");
+                Logger.getInstance().logError("Authentication failure");
                 return false;
             }
-            Logger.getInstance().log("Authenticated on api.ecruise.me");
+            Logger.getInstance().logInfo("Authenticated on https://api.ecruise.me");
             return true;
         }, onFinishedHandler, null);
     }
@@ -583,7 +615,8 @@ public class ServerConnection implements IServerConnection
                     if (customer.getString("chipCardUid").equals(chipCardUid))
                     {
                         int customerId = customer.getInt("customerId");
-                        Logger.getInstance().log("ChipCardUid " + chipCardUid + " <=> CustomerId " + customerId + " found");
+                        Logger.getInstance().logInfo("ChipCardUid " + chipCardUid
+                                + " <=> CustomerId " + customerId + " found");
                         return customerId;
                     }
                 }
@@ -592,7 +625,7 @@ public class ServerConnection implements IServerConnection
             {
                 e.printStackTrace();
             }
-            Logger.getInstance().log("ChipCardUid " + chipCardUid + " <=> no Customer found");
+            Logger.getInstance().logInfo("ChipCardUid " + chipCardUid + " <=> no Customer found");
             return null;
         }, onFinishedHandler, chipCardUid);
     }
@@ -622,14 +655,22 @@ public class ServerConnection implements IServerConnection
             {
                 customer = future.get();
                 String chipCardUid = customer.getString("chipCardUid");
-                Logger.getInstance().log("CustomerId " + param + " <=> ChipCardUid " + chipCardUid + " found");
+
+                if (chipCardUid != null)
+                {
+                    Logger.getInstance().logInfo("CustomerId " + param + " <=> ChipCardUid " + chipCardUid + " found");
+                }
+                else
+                {
+                    Logger.getInstance().logInfo("CustomerId " + param + " <=> no ChipCardUid found");
+                }
                 return chipCardUid;
             }
             catch (JSONException | NullPointerException | InterruptedException | ExecutionException e)
             {
                 e.printStackTrace();
             }
-            Logger.getInstance().log("CustomerId " + param + " <=> no ChipCardUid found (Error)");
+            Logger.getInstance().logError("CustomerId " + param + " <=> no ChipCardUid found");
             return null;
         }, onFinishedHandler, customerId);
     }
@@ -656,14 +697,16 @@ public class ServerConnection implements IServerConnection
             try
             {
                 JSONObject car = future.get();
-                Logger.getInstance().log("Car " + param + " pulled");
+                double chargeLevel = car.getDouble("chargeLevel");
+                Logger.getInstance().logInfo("Car" + param + " \uD83D\uDD0B"
+                        + new DecimalFormat("#.#").format(chargeLevel) + "%");
                 return car;
             }
-            catch (InterruptedException | ExecutionException e)
+            catch (InterruptedException | ExecutionException | JSONException e)
             {
                 e.printStackTrace();
             }
-            Logger.getInstance().log("Car " + param + " not found (Error)");
+            Logger.getInstance().logError("Car " + param + " not found");
             return null;
         }, onFinishedHandler, carId);
     }
@@ -691,14 +734,14 @@ public class ServerConnection implements IServerConnection
             try
             {
                 JSONArray trips = future.get();
-                Logger.getInstance().log("Trips for car " + param + " pulled");
+                Logger.getInstance().logInfo("Trips for car " + param + " pulled");
                 return trips;
             }
             catch (InterruptedException | ExecutionException e)
             {
                 e.printStackTrace();
             }
-            Logger.getInstance().log("Trips for car " + param + " not found (Error)");
+            Logger.getInstance().logError("Trips for car " + param + " not found");
             return null;
         }, onFinishedHandler, carId);
     }
@@ -740,12 +783,13 @@ public class ServerConnection implements IServerConnection
                 {
                     response = future.get();
                     bookingId = response.getInt("id");
-                    Logger.getInstance().log("Booking created with ID " + bookingId);
+                    Logger.getInstance().logInfo("Booking created with ID " + bookingId);
                     return bookingId;
                 }
                 catch (InterruptedException | ExecutionException | JSONException e)
                 {
                     e.printStackTrace();
+                    Logger.getInstance().logError("Booking not created");
                     return null;
                 }
             }, onFinishedHandler, booking);
@@ -756,5 +800,94 @@ public class ServerConnection implements IServerConnection
             onFinishedHandler.handle(null);
             return;
         }
+    }
+
+    private void getCarChargingStation(int carId, OnFinishedHandler<JSONObject> onFinishedHandler)
+    {
+        ParametricThread<JSONObject, Integer> thread = new ParametricThread<>((param) ->
+        {
+            String url = "https://api.ecruise.me/v1/car-charging-stations/by-car/" + param;
+
+            RequestFuture<JSONArray> future = RequestFuture.newFuture();
+            JsonArrayRequest request = new JsonArrayRequest
+                    (Request.Method.GET, url, null, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+            request(request);
+
+            try
+            {
+                JSONArray trips = future.get();
+                Logger.getInstance().logInfo("Car-charging-stations for car " + param + " pulled");
+                return trips.getJSONObject(trips.length() - 1);
+            }
+            catch (InterruptedException | ExecutionException | JSONException e)
+            {
+                e.printStackTrace();
+            }
+            Logger.getInstance().logError("Car-charging-stations for car " + param + " not found");
+            return null;
+        }, onFinishedHandler, carId);
+    }
+
+    private void getRandomFreeChargingStation(OnFinishedHandler<JSONObject> onFinishedHandler)
+    {
+        ParametricThread<JSONObject, Void> thread = new ParametricThread<>((empty) ->
+        {
+            String url = "https://api.ecruise.me/v1/charging-stations";
+
+            RequestFuture<JSONArray> future = RequestFuture.newFuture();
+            JsonArrayRequest request = new JsonArrayRequest
+                    (Request.Method.GET, url, null, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+            request(request);
+
+            try
+            {
+                JSONArray chargingStations = future.get();
+                JSONArray freeStations = new JSONArray();
+
+                for (int i = 0; i < chargingStations.length(); i++)
+                {
+                    JSONObject candidate = chargingStations.getJSONObject(i);
+                    if (candidate.getInt("slotsOccupied") < candidate.getInt("slots"))
+                    {
+                        freeStations.put(candidate);
+                    }
+                }
+
+                if (freeStations.length() == 0)
+                {
+                    Logger.getInstance().logError("No free ChargingStations for ending trip. Keep driving");
+                }
+
+                JSONObject randomFreeStation = freeStations.getJSONObject(new Random().nextInt(freeStations.length()));
+
+                Logger.getInstance().logInfo("ChargingStation " + randomFreeStation.getInt("chargingStationId")
+                        + " randomly picked from " + freeStations.length() + " free Stations for ending trip");
+                return randomFreeStation;
+            }
+            catch (InterruptedException | ExecutionException | JSONException e)
+            {
+                e.printStackTrace();
+            }
+            Logger.getInstance().logError("No ChargingStations found");
+            return null;
+        }, onFinishedHandler, null);
     }
 }

@@ -25,7 +25,7 @@
                     android:layout_height="match_parent" android:gravity="center_vertical">
 
                 <TextView
-                        android:text="Server Connectivity Log:"
+                        android:text="Server Datenverkehr:"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" android:id="@+id/textView"/>
             </RelativeLayout>

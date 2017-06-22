@@ -42,9 +42,9 @@ public class MainActivity extends AppCompatActivity
             Log.d("MainActivity", "update Status");
             car.getStatusLedColorCode((colorCode) ->
             {
-                setStatusColorCode(colorCode);
+                setStatus(colorCode);
             });
-            car.updatePositionToPausingPostion((success) ->
+            car.updatePositionToPausingPosition((success) ->
             {
             });
         }
@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity
         {
             if (carId == null)
             {
-                setStatusColorCode(ColorCode.RED);
+                setStatus(ColorCode.RED);
                 return;
             }
 
@@ -109,13 +109,13 @@ public class MainActivity extends AppCompatActivity
                     }
                     catch (NoSuchElementException | InvalidParameterException e)
                     {
-                        setStatusColorCode(ColorCode.RED);
+                        setStatus(ColorCode.RED);
                         return;
                     }
                 }
                 else
                 {
-                    setStatusColorCode(ColorCode.RED);
+                    setStatus(ColorCode.RED);
                     return;
                 }
             }));
@@ -216,7 +216,7 @@ public class MainActivity extends AppCompatActivity
 
             if (colorCode == ColorCode.GREEN)
             {
-                setStatusColorCode(ColorCode.OFF);
+                setStatus(ColorCode.OFF);
                 setStatusText(getResources().getString(R.string.driving));
                 setInfoText(getResources().getString(R.string.while_driving_info));
                 LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayoutTrip);
@@ -263,7 +263,7 @@ public class MainActivity extends AppCompatActivity
         textView.setText(statusText);
     }
 
-    private void setStatusColorCode(ColorCode state)
+    private void setStatus(ColorCode state)
     {
         setStatusLEDColor(colorsFromColorCode(state));
 

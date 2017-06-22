@@ -34,9 +34,33 @@ public class Logger
 
     public void log(String text)
     {
-        for(ILogListener listener : listeners)
+        for (ILogListener listener : listeners)
         {
             listener.log(text);
+        }
+    }
+
+    public void logInfo(String text)
+    {
+        for (ILogListener listener : listeners)
+        {
+            listener.log("(i)" + text);
+        }
+    }
+
+    public void logWarning(String text)
+    {
+        for (ILogListener listener : listeners)
+        {
+            listener.log("(!)" + text);
+        }
+    }
+
+    public void logError(String text)
+    {
+        for (ILogListener listener : listeners)
+        {
+            listener.log("(x)" + text);
         }
     }
 }

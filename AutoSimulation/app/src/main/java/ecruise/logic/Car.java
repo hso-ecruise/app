@@ -2,6 +2,7 @@ package ecruise.logic;
 
 import ecruise.data.*;
 
+import java.util.Calendar;
 import java.util.Random;
 
 /**
@@ -15,19 +16,22 @@ public class Car
     private ScanLED scanLED = new ScanLED();
     private IScanDevice scanDevice;
 
+    private boolean driving = false;
+    private boolean pausing = false;
+    private Calendar limitTime; // The DateTime when the Car is sending its position. 24h after start of trip
+    private int limitTimeValue = 24;
+    private  int limitTimeUnit = Calendar.HOUR;
+
     public boolean isDriving()
     {
         return driving;
     }
-
-    private boolean driving = false;
 
     public boolean isPausing()
     {
         return pausing;
     }
 
-    private boolean pausing = false;
     private String driverUid = "";
     private int tripId = -1;
 
@@ -40,7 +44,8 @@ public class Car
 
     public void endTrip(OnFinishedHandler<Boolean> onFinishedHandler)
     {
-        Server.getConnection().endTrip(tripId, 10, 2, (patchedTripId) ->
+        int distanceTravelled = new Random().nextInt((50 - 2) + 1) + 2;
+        Server.getConnection().endTrip(CAR_ID, tripId, distanceTravelled, (patchedTripId) ->
         {
             if (patchedTripId == null)
             {
@@ -48,27 +53,18 @@ public class Car
                 return;
             }
 
-            Server.getConnection().updatePosition(CAR_ID, 49.485133, 8.463558, (successPosition) ->
+            int chargingLevel = new Random().nextInt((95 - 80) + 1) + 80;
+            Server.getConnection().updateChargeLevel(CAR_ID, chargingLevel, (successChargeLevel) ->
             {
-                if (!successPosition)
+                if (!successChargeLevel)
                 {
                     onFinishedHandler.handle(false);
                     return;
                 }
 
-                int chargingLevel = new Random().nextInt((90 - 30) + 1) + 30;
-                Server.getConnection().updateChargeLevel(CAR_ID, chargingLevel, (successChargeLevel) ->
-                {
-                    if (!successChargeLevel)
-                    {
-                        onFinishedHandler.handle(false);
-                        return;
-                    }
-
-                    driving = false;
-                    onFinishedHandler.handle(true);
-                    return;
-                });
+                driving = false;
+                onFinishedHandler.handle(true);
+                return;
             });
         });
     }
@@ -134,12 +130,22 @@ public class Car
 
     }
 
-    public void updatePositionToPausingPostion(OnFinishedHandler<Boolean> onFinishedHandler)
+    public void updatePositionToPausingPosition(OnFinishedHandler<Boolean> onFinishedHandler)
     {
         if (isPausing())
         {
             Server.getConnection().hasPositionRequest(CAR_ID, (hasPositionRequest) ->
             {
+                if (limitTime != null)
+                {
+                    if (limitTime.before(Calendar.getInstance()))
+                    {
+                        Logger.getInstance().logInfo("Pausing time exhausted. Sending position.");
+                        hasPositionRequest = true;
+                        limitTime = null;
+                    }
+                }
+
                 if (hasPositionRequest)
                 {
                     // https://goo.gl/maps/6rhVQWGBpQE2
@@ -188,6 +194,14 @@ public class Car
                 return;
             }
 
+            if (carState == CarState.DRIVING)
+            {
+                driving = true;
+                pausing = false;
+                limitTime = Calendar.getInstance();
+                limitTime.add(limitTimeUnit, limitTimeValue);
+            }
+
             onFinishedHandler.handle(statusLED.getColorCode(carState));
             return;
         });
@@ -213,6 +227,8 @@ public class Car
             if (driverUid.equals(chipCardUid))
             {
                 pausing = false;
+                limitTime = Calendar.getInstance();
+                limitTime.add(limitTimeUnit, limitTimeValue);
                 onFinishedHandler.handle(ColorCode.GREEN);
                 return;
             }
@@ -222,26 +238,25 @@ public class Car
                 return;
             }
         }
-
-        getCarState((carState ->
+        Server.getConnection().validId(chipCardUid, (validId) ->
         {
-            if (carState == null)
-            {
-                onFinishedHandler.handle(null);
-                return;
-            }
-
-            if (carState == CarState.BLOCKED)
+            if (!validId)
             {
                 onFinishedHandler.handle(ColorCode.RED);
                 return;
             }
 
-            Server.getConnection().validId(chipCardUid, (validId) ->
+            getCarState((carState ->
             {
-                if (!validId)
+                if (carState == null)
                 {
-                    onFinishedHandler.handle(ColorCode.RED);
+                    onFinishedHandler.handle(null);
+                    return;
+                }
+
+                if (carState == CarState.BLOCKED)
+                {
+                    onFinishedHandler.handle(scanLED.getColorCode(carState, false));
                     return;
                 }
 
@@ -257,7 +272,9 @@ public class Car
                             driverUid = chipCardUid;
                             driving = true;
                             pausing = false;
-                            Logger.getInstance().log("Booking used to start trip");
+                            limitTime = Calendar.getInstance();
+                            limitTime.add(limitTimeUnit, limitTimeValue);
+                            Logger.getInstance().logInfo("Booking used to start trip");
 
                             Server.getConnection().updateChargingState(CAR_ID, ChargingState.DISCHARGING, (success) ->
                             {
@@ -287,7 +304,7 @@ public class Car
                     // start new trip
                     if (colorCode == ColorCode.GREEN)
                     {
-                        Server.getConnection().createTrip(chipCardUid, CAR_ID, 2, (createdTripId) ->
+                        Server.getConnection().createTrip(chipCardUid, CAR_ID, (createdTripId) ->
                         {
                             if (createdTripId == null)
                             {
@@ -299,7 +316,9 @@ public class Car
                             driverUid = chipCardUid;
                             driving = true;
                             pausing = false;
-                            Logger.getInstance().log("New spontaneous trip");
+                            limitTime = Calendar.getInstance();
+                            limitTime.add(limitTimeUnit, limitTimeValue);
+                            Logger.getInstance().logInfo("New spontaneous trip");
                             onFinishedHandler.handle(colorCode);
                             return;
                         });
@@ -310,7 +329,7 @@ public class Car
                         return;
                     }
                 }
-            });
-        }));
+            }));
+        });
     }
 }
