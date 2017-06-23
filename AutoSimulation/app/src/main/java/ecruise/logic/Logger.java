@@ -44,7 +44,7 @@ public class Logger
     {
         for (ILogListener listener : listeners)
         {
-            listener.log("(i)" + text);
+            listener.log("(i) " + text);
         }
     }
 
@@ -52,7 +52,7 @@ public class Logger
     {
         for (ILogListener listener : listeners)
         {
-            listener.log("(!)" + text);
+            listener.log("(!) " + text);
         }
     }
 
@@ -60,7 +60,7 @@ public class Logger
     {
         for (ILogListener listener : listeners)
         {
-            listener.log("(x)" + text);
+            listener.log("(x) " + text);
         }
     }
 }

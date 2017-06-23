@@ -39,12 +39,12 @@ public class ServerConnection implements IServerConnection
     {
         if (req.getBody() != null)
         {
-            Logger.getInstance().log("\u25B2" + req.getUrl().substring(22)
-                    + " \uD83D\uDCE6" + new String(req.getBody(), StandardCharsets.UTF_8));
+            Logger.getInstance().log("\uD83C\uDF10" + req.getUrl().substring(22)
+                    + " \uD83D\uDCE6" + new String(req.getBody(), StandardCharsets.UTF_8).replace("\"ecruiseAdmin123!!!\"", "<<PASSWORD REDACTED>>"));
         }
         else
         {
-            Logger.getInstance().log("\u25B2" + req.getUrl().substring(22) + " \uD83D\uDCE6\u2205");
+            Logger.getInstance().log("\uD83C\uDF10" + req.getUrl().substring(22) + " \uD83D\uDCE6\u2205");
         }
         requestQueue.add(req);
     }
@@ -656,7 +656,7 @@ public class ServerConnection implements IServerConnection
                 customer = future.get();
                 String chipCardUid = customer.getString("chipCardUid");
 
-                if (chipCardUid != null)
+                if (chipCardUid != null && !chipCardUid.equals("null"))
                 {
                     Logger.getInstance().logInfo("CustomerId " + param + " <=> ChipCardUid " + chipCardUid + " found");
                 }

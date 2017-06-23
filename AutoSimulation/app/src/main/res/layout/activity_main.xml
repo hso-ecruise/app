@@ -43,7 +43,7 @@
         </FrameLayout>
         <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="200dp" android:id="@+id/scroll">
+                android:layout_height="230dp" android:id="@+id/scroll">
             <TextView
                     android:layout_width="match_parent"
                     android:id="@+id/log" android:layout_height="wrap_content" android:typeface="monospace"/>
