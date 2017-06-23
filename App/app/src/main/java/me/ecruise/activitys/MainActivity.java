@@ -1,5 +1,6 @@
 package me.ecruise.activitys;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -39,8 +40,10 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
 
     /**
      * initializes the activity
+     *
      * @param savedInstanceState
      */
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,12 +91,17 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
 
     /**
      * starts a new MapActivity which shows the booked car or the booked position
-     * @param bookedPos
+     *
+     * @param booking
      */
-    private void startBookedCarMap(LatLng bookedPos) {
+    private void startBookingDetailMap(Booking booking) {
         Intent intent = new Intent(this, Map2Activity.class);
+        Log.d("BookedCarId", Integer.toString(booking.getCarID()));
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setBookedCarId(booking.getCarID());
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowStations(false);
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowAllCars(false);
         me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowBookedCar(true);
-        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setBookedPos(bookedPos);
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setBookedPos(booking.getBookedPos());
         startActivity(intent);
     }
 
@@ -107,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
 
     /**
      * shows a popup
+     *
      * @param v
      */
     public void showPopup(View v) {
@@ -119,7 +128,6 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
-     *
      * @param item
      * @return
      */
@@ -146,13 +154,13 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
      */
     public void logout() {
         Log.d("Logout", "Main");
-        SharedPreferences savedLogin =  PreferenceManager.getDefaultSharedPreferences((this.getApplicationContext()));
+        SharedPreferences savedLogin = PreferenceManager.getDefaultSharedPreferences((this.getApplicationContext()));
         SharedPreferences.Editor editor = savedLogin.edit();
         editor.putInt("userId", 0);
         editor.putString("token", "");
         // Commit the edits!
         editor.commit();
-        Intent intent = new Intent(this , LoginActivity.class);
+        Intent intent = new Intent(this, LoginActivity.class);
         startActivity(intent);
     }
 
@@ -193,54 +201,41 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
-     * shows all bookings in a linear layout
-     * @param bookings
+     * gets bookings from the server
      */
-    public void showBookings(JSONArray bookings) {
-        LinearLayout ll = (LinearLayout) findViewById(R.id.bookings);
-        LinearLayoutCompat.LayoutParams lp = new LinearLayoutCompat.LayoutParams(LinearLayoutCompat.LayoutParams.MATCH_PARENT, LinearLayoutCompat.LayoutParams.WRAP_CONTENT);
-        for (int i = 0; i < bookings.length(); i++) {
-            final Booking bookingButton;
-            try {
-                final LatLng bookedPosition = new LatLng(bookings.getJSONObject(i).getDouble("bookingPositionLatitude"), bookings.getJSONObject(i).getDouble("bookingPositionLongitude"));
-                bookingButton = new Booking(this.getApplicationContext(), bookings.getJSONObject(i).getInt("bookingId"), 0, bookings.getJSONObject(i).getString("plannedDate"), bookedPosition);
-                ll.addView(bookingButton, lp);
-                bookingButton.setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        startBookedCarMap(bookedPosition);
-                    }
-                });
-                try {
-                    if(bookings.getJSONObject(i).getInt("tripId") != 0)
-                    {
-                        getCar(bookings.getJSONObject(i).getInt("tripId"));
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void getCar(int tripId)
-    {
+    public void getBookingFromServer(int id) {
+        Log.d("GET", "Booking");
         final String mToken = Customer.getInstance(this.getApplicationContext()).getToken();
-        String url = "https://api.ecruise.me/v1/trips/" + tripId;
+        final Context mCtx = this.getApplicationContext();
+        String url = "https://api.ecruise.me/v1/bookings/" + id;
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
                 (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
 
-                    int carId;
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            carId = response.getInt("carId");
-                            me.ecruise.data.Map.getInstance(null).setBookedCarId(carId);
+                            Booking booking = new Booking(mCtx, response.getInt("bookingId"), response.getString("plannedDate"), new LatLng(response.getDouble("bookingPositionLatitude"), response.getDouble("bookingPositionLongitude")));
+                            int tripId = 0;
+                            try {
+                                tripId =  response.getInt("tripId");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            if(tripId == 0)
+                            {
+                                startBookingDetailMap(booking);
+                            }
+                            else
+                            {
+                                getCar(tripId, booking);
+                            }
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
+
+                        Log.d("booking: ", response.toString());
                     }
+
 
                 }, new Response.ErrorListener() {
 
@@ -260,5 +255,79 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
             }
         };
         Server.getInstance(this.getApplicationContext()).addToRequestQueue(jsonObjectRequest);
+    }
+
+    public void getCar(int tripId, final Booking booking)
+    {
+        Log.d("GET", "Car");
+        if(tripId == 0)
+        {
+            return;
+        }
+
+        final String mToken = Customer.getInstance(null).getToken();
+        String url = "https://api.ecruise.me/v1/trips/" + tripId;
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            Booking booking1 = booking;
+                            int carId = response.getInt("carId");
+                            booking1.setCarID(carId);
+                            Log.d("GOT A CAR", Integer.toString(carId));
+                            startBookingDetailMap(booking1);
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // TODO Auto-generated method stub
+
+                    }
+
+
+                }) {
+            @Override
+            public java.util.Map<String, String> getHeaders() throws AuthFailureError {
+                java.util.Map<String, String> params = new HashMap<>();
+                params.put("access_token", mToken);
+                return params;
+            }
+        };
+        Server.getInstance(null).addToRequestQueue(jsonObjectRequest);
+    }
+
+    /**
+     * shows all bookings in a linear layout
+     *
+     * @param bookings
+     */
+    public void showBookings(JSONArray bookings) {
+        LinearLayout ll = (LinearLayout) findViewById(R.id.bookings);
+        LinearLayoutCompat.LayoutParams lp = new LinearLayoutCompat.LayoutParams(LinearLayoutCompat.LayoutParams.MATCH_PARENT, LinearLayoutCompat.LayoutParams.WRAP_CONTENT);
+        for (int i = 0; i < bookings.length(); i++) {
+            final Booking bookingButton;
+
+            try {
+                final LatLng bookedPosition = new LatLng(bookings.getJSONObject(i).getDouble("bookingPositionLatitude"), bookings.getJSONObject(i).getDouble("bookingPositionLongitude"));
+                bookingButton = new Booking(this.getApplicationContext(), bookings.getJSONObject(i).getInt("bookingId"), bookings.getJSONObject(i).getString("plannedDate"), bookedPosition);
+                final int id = bookings.getJSONObject(i).getInt("bookingId");
+                ll.addView(bookingButton, lp);
+                bookingButton.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        getBookingFromServer(id);
+                    }
+                });
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

@@ -13,13 +13,34 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 
+import com.android.volley.NetworkResponse;
+import com.android.volley.ParseError;
+import com.android.volley.Response;
+import com.android.volley.Response.ErrorListener;
+import com.android.volley.Response.Listener;
+import com.android.volley.toolbox.HttpHeaderParser;
+import com.android.volley.toolbox.JsonRequest;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+
 public class JsonStringRequest extends JsonRequest<JSONObject>
 {
 
     public JsonStringRequest(int method, String url, String stringRequest,
                              Listener<JSONObject> listener, ErrorListener errorListener)
     {
-        super(method, url, stringRequest, listener, errorListener);
+        super(method, url, stringRequest, listener,
+                errorListener);
+    }
+
+    public JsonStringRequest(String url, String stringRequest, Listener<JSONObject> listener,
+                             ErrorListener errorListener)
+    {
+        super(stringRequest == null ? Method.GET : Method.POST, url, stringRequest,
+                listener, errorListener);
     }
 
     @Override

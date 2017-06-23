@@ -105,10 +105,14 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
             });
         }
         if (Map.getInstance(this.getApplicationContext()).getShowBookedCar()) {
-            if(Map.getInstance(this.getApplicationContext()).getBookedCarId() != 0)
+            if(Map.getInstance(this.getApplicationContext()).getBookedCarId() != 0) {
+                Log.d("Show: ", "booked Car");
                 showBookedCarMarker();
-            else
+            }
+            else{
+                Log.d("Show: ", "booked Position");
                 showBookedPositionMarker();
+            }
 
         }
         if (Map.getInstance(this.getApplicationContext()).isGetLocation())
@@ -208,6 +212,7 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
     private void showCarMarkers() {
         ArrayList<Car> cars = Map.getInstance(this.getApplicationContext()).getCars();
         for (Car car : cars) {
+            Log.d("Show", "Car Nr" + Integer.toString(car.getId()));
             createMarker(car.getName(), car.getPos(), "Car " + Integer.toString(car.getId()));
             setMarkerImage("Car " + Integer.toString(car.getId()), "charging" + Integer.toString(car.getChargingLevel()));
         }
@@ -217,12 +222,17 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
      * shows Marker for the booked Car on the map
      */
     private void showBookedCarMarker() {
+        Log.d("Show", "showBookedCarMarker");
         int id = Map.getInstance(this.getApplicationContext()).getBookedCarId();
-        ArrayList<Car> cars = Map.getInstance(this.getApplicationContext()).getCars();
+        ArrayList<Car> cars = Map.getInstance(this.getApplicationContext()).getAllCars();
         for (Car car : cars) {
+            Log.d("Car Nr", Integer.toString(car.getId()));
             if (id == car.getId()) {
-                createMarker(car.getName(), car.getPos(), "Car " + Integer.toString(car.getId()));
-                setMarkerImage("Car " + Integer.toString(car.getId()), "charging" + Integer.toString(car.getChargingLevel()));
+                CameraPosition cp = new CameraPosition.Builder().target(car.getPos()).zoom(13).build();
+                CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
+                mMap.moveCamera(cu);
+                createMarker(car.getName(), car.getPos(), car.getPlate());
+                setMarkerImage(car.getPlate(), "owncar");
             }
 
         }
@@ -232,14 +242,17 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
      * shows Marker for the booked Position on the map
      */
     private void showBookedPositionMarker() {
-        createMarker("Buchung", Map.getInstance(null).getBookedPos(), "Buchung" );
+        CameraPosition cp = new CameraPosition.Builder().target(Map.getInstance(this.getApplicationContext()).getBookedPos()).zoom(13).build();
+        CameraUpdate cu = CameraUpdateFactory.newCameraPosition(cp);
+        mMap.moveCamera(cu);
+        createMarker("Buchung", Map.getInstance(this.getApplicationContext()).getBookedPos(), "Buchung" );
     }
 
     /**
      * This method create a marker on the GoogleMap
      *
      * @param markerName given Marker Title
-     * @param ltlg       given Marker positionm
+     * @param ltlg       given Marker position
      * @param snippetId  give Marker Snippet
      **/
     private void createMarker(String markerName, LatLng ltlg, String snippetId) {

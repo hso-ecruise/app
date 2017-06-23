@@ -1,19 +1,40 @@
 package ecruise.data;
 
+import org.json.JSONException;
+
+import java.text.ParseException;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutionException;
+
 /**
  * Created by Tom on 28.03.2017.
  */
 public interface IServerConnection
 {
-    boolean checkID(String chipCardUid);
+    // Handler returns ChargingState and BookingState, or null if error, or at least one of them is invalid
+    void getCarStateTuple(int carId, OnFinishedHandler<CarStateTuple> onFinishedHandler);
 
-    boolean checkIDExists(String chipCardUid);
+    // Handler returns tripId, or null if chipCardUid is invalid or error if not found
+    void hasBooked(int carId, String chipCardUid, OnFinishedHandler<Integer> onFinishedHandler);
 
-    BookingState getBookingState();
+    // Handler returns success, false if error
+    void updateChargingState(int carId, ChargingState chargingState, OnFinishedHandler<Boolean> onFinishedHandler);
 
-    ChargingState getChargingState();
+    // Handler returns success, false if error
+    void updateChargeLevel(int carId, double chargeLevel, OnFinishedHandler<Boolean> onFinishedHandler);
 
-    boolean startTrip(String chipCardUid);
+    // Handler returns success, or false if invalid or error (never null)
+    void validId(String chipCardUid, OnFinishedHandler<Boolean> onFinishedHandler);
 
-    void endTrip(int distanceTravelled, int endCharingStationId);
+    // Handler returns tripId of the newly created trip, or null if error
+    void createTrip(String chipCardUid, int carId, OnFinishedHandler<Integer> onFinishedHandler);
+
+    // Handler returns tripId of the ended trip, or null if error
+    void endTrip(int carId, int tripId, int distanceTravelled, OnFinishedHandler<Integer> onFinishedHandler);
+
+    // Handler returns success, also false if error (never null)
+    void updatePosition(int carId, double latitude, double longitude, OnFinishedHandler<Boolean> onFinishedHandler);
+
+    // Handler returns if request is there, also false if error (never null)
+    void hasPositionRequest(int carId, OnFinishedHandler<Boolean> onFinishedHandler);
 }

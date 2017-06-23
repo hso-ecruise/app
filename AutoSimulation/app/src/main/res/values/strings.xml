@@ -1,15 +1,16 @@
 <resources>
-    <string name="app_name">AutoSimulation</string>
+    <string name="app_name">Auto-Simulation</string>
 
-    <string name="prompt">Scannen Sie Ihre Chip-Karte</string>
-    <string name="scanned">Chip-Karte gescannt</string>
+    <string name="prompt_info">Scannen Sie Ihre Chip-Karte</string>
+    <string name="scanned_info">Chip-Karte gescannt</string>
+    <string name="server_wainting_info">Server nicht bereit…</string>
+    <string name="nfc_wainting_info">Nfc nicht bereit…</string>
+    <string name="while_driving_info"> </string>
 
-    <string name="not_available">nicht verfügbar</string>
+    <string name="not_available">blockiert</string>
     <string name="later_available">Laden…\ndanach verfügbar</string>
     <string name="booked">gebucht</string>
     <string name="available">verfügbar</string>
-    <string name="diconnected">nicht verbunden</string>
-    <string name="discarging">geöffnet</string>
-    <string name="connecting">verbinden…</string>
-    <string name="internal_error">error</string>
+    <string name="disconnected">nicht verbunden</string>
+    <string name="driving">geöffnet</string>
 </resources>

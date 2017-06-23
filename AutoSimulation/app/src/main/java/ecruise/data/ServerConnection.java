@@ -5,21 +5,19 @@ import android.util.Log;
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.RequestFuture;
-import com.android.volley.toolbox.Volley;
+import com.android.volley.toolbox.*;
 import ecruise.logic.JsonDate;
 import ecruise.logic.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.security.InvalidParameterException;
-import java.text.ParseException;
+import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -31,382 +29,865 @@ import java.util.concurrent.TimeoutException;
 // the interface to the api.ecruise.me
 public class ServerConnection implements IServerConnection
 {
-    private static final String CAR_ID = "0";
-    private static final String AUTH_EMAIL = "";
-    private static final String AUTH_PASSWORD = "";
+    private static final String AUTH_EMAIL = "admin@ecruise.me";
+    private static final String AUTH_PASSWORD = "ecruiseAdmin123!!!";
     private String accessToken;
 
-    private BookingState bookingState = null;
-    private ChargingState chargingState = null;
-    private String bookedChipCardUid = null;
-    private int tripId = -1;
-
     private RequestQueue requestQueue;
-    private static Context mCtx;
 
-    public ServerConnection(Context ctx)
+    private void request(final JsonRequest req)
     {
-        mCtx = ctx;
-        requestQueue = getRequestQueue();
-        if (!authenticate())
+        if (req.getBody() != null)
         {
-            throw new InvalidParameterException("Credentials are invalid for api.ecruise.me");
+            Logger.getInstance().log("\u25B2" + req.getUrl().substring(22)
+                    + " \uD83D\uDCE6" + new String(req.getBody(), StandardCharsets.UTF_8));
         }
+        else
+        {
+            Logger.getInstance().log("\u25B2" + req.getUrl().substring(22) + " \uD83D\uDCE6\u2205");
+        }
+        requestQueue.add(req);
     }
 
-    private RequestQueue getRequestQueue()
+    public ServerConnection(Context ctx, OnFinishedHandler<Boolean> onFinishedHandler)
     {
-        if (requestQueue == null)
-        {
-            // getApplicationContext() is key, it keeps you from leaking the
-            // Activity or BroadcastReceiver if someone passes one in.
-            requestQueue = Volley.newRequestQueue(mCtx.getApplicationContext());
-        }
-        return requestQueue;
-    }
-
-    private <T> void addToRequestQueue(Request<T> req)
-    {
-        getRequestQueue().add(req);
-    }
-
-    private boolean authenticate()
-    {
-        String url = "https://api.ecruise.me/v1/public/login/" + AUTH_EMAIL;
-        String stringRequest = "\"" + AUTH_PASSWORD + "\"";
-        RequestFuture<JSONObject> future = RequestFuture.newFuture();
-        JsonStringRequest jsObjRequest = new JsonStringRequest
-                (Request.Method.POST, url, stringRequest, future, future);
-
-        addToRequestQueue(jsObjRequest);
-
-        try
-        {
-            JSONObject response = future.get(5, TimeUnit.SECONDS); // this will block
-            accessToken = response.getString("accessToken");
-        }
-        catch (ExecutionException | JSONException | InterruptedException | TimeoutException e1)
-        {
-            e1.printStackTrace();
-            return false;
-        }
-        return true;
+        requestQueue = Volley.newRequestQueue(ctx.getApplicationContext());
+        authenticate(onFinishedHandler);
     }
 
     @Override
-    public boolean checkID(String chipCardUid)
+    public void getCarStateTuple(int carId, OnFinishedHandler<CarStateTuple> onFinishedHandler)
     {
-        if (getBookingState() != BookingState.BOOKED)
-            throw new IllegalStateException("This car is not booked");
-
-        try
+        getCarById(carId, (car) ->
         {
-            updateBookedChipCardUid();
-        }
-        catch (ExecutionException | ParseException | JSONException | InterruptedException e)
-        {
-            e.printStackTrace();
-        }
-
-        return chipCardUid.equals(this.bookedChipCardUid);
-    }
-
-    @Override
-    public boolean checkIDExists(String chipCardUid)
-    {
-        try
-        {
-            getCustomerIdFromChipCardUid(chipCardUid);
-        }
-        catch (InvalidParameterException e)
-        {
-            return false;
-        }
-        catch (InterruptedException | ExecutionException | JSONException e)
-        {
-            e.printStackTrace();
-        }
-        return true;
-    }
-
-    @Override
-    public BookingState getBookingState()
-    {
-        try
-        {
-            updateCarState();
-        }
-        catch (ExecutionException | JSONException | InterruptedException e)
-        {
-            e.printStackTrace();
-        }
-        return bookingState;
-    }
-
-    @Override
-    public ChargingState getChargingState()
-    {
-        try
-        {
-            updateCarState();
-        }
-        catch (ExecutionException | JSONException | InterruptedException e)
-        {
-            e.printStackTrace();
-        }
-        return chargingState;
-    }
-
-    @Override
-    public boolean startTrip(String chipCardUid)
-    {
-        String url = "https://api.ecruise.me/v1/trips";
-        JSONObject trip = new JSONObject();
-        try
-        {
-            trip.put("carId", CAR_ID);
-            trip.put("customerId", getCustomerIdFromChipCardUid(chipCardUid));
-            trip.put("startDate", new JsonDate(Calendar.getInstance()).getString());
-        }
-        catch (InvalidParameterException e)
-        {
-            // There is no customer with this ChipCardUid
-            return false;
-        }
-        catch (InterruptedException | ExecutionException | JSONException e)
-        {
-            e.printStackTrace();
-        }
-
-        RequestFuture<JSONObject> future = RequestFuture.newFuture();
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                (Request.Method.POST, url, trip, future, future)
-        {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
+            if (car == null)
             {
-                Map<String, String> params = new HashMap<>();
-                params.put("access_token", accessToken);
-                return params;
+                onFinishedHandler.handle(null);
+                return;
             }
-        };
-        addToRequestQueue(jsonObjectRequest);
 
+            ChargingState chargingState = null;
+            try
+            {
+                switch (car.getInt("chargingState"))
+                {
+                    case 1:
+                        chargingState = ChargingState.DISCHARGING;
+                        break;
+                    case 2:
+                        chargingState = ChargingState.CHARGING;
+                        break;
+                    case 3:
+                        chargingState = ChargingState.FULL;
+                        break;
+                    default:
+                        Log.e("ServerConnection", "Unknown chargingState received from Server");
+                        onFinishedHandler.handle(null);
+                        return;
+                }
+            }
+            catch (JSONException e)
+            {
+                e.printStackTrace();
+                onFinishedHandler.handle(null);
+                return;
+            }
+
+            Log.d("ServerConnection", "chargingState received " + chargingState);
+
+            BookingState bookingState = null;
+            try
+            {
+                switch (car.getInt("bookingState"))
+                {
+                    case 1:
+                        bookingState = BookingState.AVAILABLE;
+                        break;
+                    case 2:
+                        bookingState = BookingState.BOOKED;
+                        break;
+                    case 3:
+                        bookingState = BookingState.BLOCKED;
+                        break;
+                    default:
+                        Log.e("ServerConnection", "Unknown bookingState received from Server");
+                        onFinishedHandler.handle(null);
+                        return;
+                }
+            }
+            catch (JSONException e)
+            {
+                e.printStackTrace();
+                onFinishedHandler.handle(null);
+                return;
+            }
+
+            Log.d("ServerConnection", "bookingState received " + bookingState);
+
+            onFinishedHandler.handle(new CarStateTuple(chargingState, bookingState));
+            return;
+        });
+    }
+
+    @Override
+    public void hasBooked(int carId, String chipCardUid, OnFinishedHandler<Integer> onFinishedHandler)
+    {
+        getTrips(carId, (trips) ->
+        {
+            if (trips == null)
+            {
+                onFinishedHandler.handle(null);
+                return;
+            }
+
+            try
+            {
+                for (int i = 0; i < trips.length(); i++)
+                {
+                    JSONObject trip = trips.getJSONObject(i);
+                    int tripId = trip.getInt("tripId");
+
+                    String endDate = trip.getString("endDate");
+
+                    // trip is new
+                    if (endDate.equals("null"))
+                    {
+                        String bookedCustomerId = trip.getString("customerId");
+                        getChipCardUidFromCustomerId(bookedCustomerId, (chipCardUidOfBooked) ->
+                        {
+                            if (chipCardUidOfBooked == null)
+                            {
+                                onFinishedHandler.handle(null);
+                                return;
+                            }
+
+                            if (chipCardUidOfBooked.equals(chipCardUid))
+                            {
+                                onFinishedHandler.handle(tripId);
+                                return;
+                            }
+                            else
+                            {
+                                Logger.getInstance().logInfo("ChipCardUid not right Customer");
+                                onFinishedHandler.handle(null);
+                                return;
+                            }
+                        });
+                        return;
+                    }
+                }
+                // nothing found
+                onFinishedHandler.handle(null);
+                return;
+            }
+            catch (JSONException e)
+            {
+                e.printStackTrace();
+                onFinishedHandler.handle(null);
+                return;
+            }
+        });
+    }
+
+    @Override
+    public void updateChargingState(int carId, ChargingState chargingState, OnFinishedHandler<Boolean> onFinishedHandler)
+    {
+        String patch;
         try
         {
-            JSONObject result = future.get(); // this will block
+            patch = "\"" + ChargingState.values()[chargingState.ordinal()] + "\"";
+            ParametricThread<Boolean, String> thread = new ParametricThread<>((param) ->
+            {
+                String url = "https://api.ecruise.me/v1/cars/" + carId + "/chargingstate";
+                RequestFuture<JSONObject> future = RequestFuture.newFuture();
+                JsonStringRequest jsonObjectRequest = new JsonStringRequest
+                        (Request.Method.PATCH, url, param, future, future)
+                {
+                    @Override
+                    public Map<String, String> getHeaders() throws AuthFailureError
+                    {
+                        Map<String, String> params = new HashMap<>();
+                        params.put("access_token", accessToken);
+                        return params;
+                    }
+                };
+                request(jsonObjectRequest);
 
-            tripId = result.getInt("id");
-            Logger.getInstance().log("Trip created with ID " + tripId);
+                JSONObject response = null;
+                int patchedCarId = -1;
+                try
+                {
+                    response = future.get();
+                    patchedCarId = response.getInt("id");
+                    Logger.getInstance().logInfo("Patched ChargingState to " + param);
+                    return true;
+                }
+                catch (InterruptedException | ExecutionException | JSONException e)
+                {
+                    e.printStackTrace();
+                    Logger.getInstance().logError("Could not Patch ChargingState");
+                    return false;
+                }
+            }, onFinishedHandler, patch);
         }
-        catch (InterruptedException | JSONException | ExecutionException e)
+        catch (NullPointerException e)
         {
             e.printStackTrace();
+            onFinishedHandler.handle(false);
+            return;
         }
-        return true;
     }
 
 
     @Override
-    public void endTrip(int distanceTravelled, int endCharingStationId)
+    public void validId(String chipCardUid, OnFinishedHandler<Boolean> onFinishedHandler)
     {
-        if (tripId == -1)
-            throw new IllegalStateException("Trip has not started yet");
-        String url = "https://api.ecruise.me/v1/trips/" + tripId;
+        getCustomerIdFromChipCardUid(chipCardUid, (result) ->
+                {
+                    if (result == null)
+                    {
+                        onFinishedHandler.handle(false);
+                        return;
+                    }
+                    else
+                    {
+                        onFinishedHandler.handle(true);
+                        return;
+                    }
+                }
+        );
+    }
 
-        JSONObject patch = new JSONObject();
+    @Override
+    public void createTrip(String chipCardUid, int carId, OnFinishedHandler<Integer> onFinishedHandler)
+    {
+        getCustomerIdFromChipCardUid(chipCardUid, (result) ->
+        {
+            if (result == null)
+            {
+                onFinishedHandler.handle(null);
+                return;
+            }
+
+            JSONObject trip = new JSONObject();
+
+            getCarChargingStation(carId, (carChargingStation) ->
+            {
+                try
+                {
+                    trip.put("tripId", null);
+                    trip.put("carId", carId);
+                    trip.put("customerId", result);
+                    trip.put("startDate", new JsonDate(Calendar.getInstance()).getString());
+                    trip.put("endDate", null);
+
+                    if (carChargingStation == null)
+                    {
+                        Logger.getInstance().logWarning("startChargingStation is " + 1);
+                        trip.put("startChargingStationId", 1);
+                    }
+                    else
+                    {
+                        Logger.getInstance().logInfo("startChargingStation is " +
+                                carChargingStation.getInt("chargingStationId"));
+                        trip.put("startChargingStationId", carChargingStation.getInt("chargingStationId"));
+                    }
+
+                    trip.put("endChargingStationId", null);
+                    trip.put("distanceTravelled", null);
+
+                    ParametricThread<Integer, JSONObject> thread = new ParametricThread<>((param) ->
+                    {
+                        String url = "https://api.ecruise.me/v1/trips";
+
+                        RequestFuture<JSONObject> tripFuture = RequestFuture.newFuture();
+                        JsonObjectRequest jsonTripObjectRequest = new JsonObjectRequest
+                                (Request.Method.POST, url, param, tripFuture, tripFuture)
+                        {
+                            @Override
+                            public Map<String, String> getHeaders() throws AuthFailureError
+                            {
+                                Map<String, String> params = new HashMap<>();
+                                params.put("access_token", accessToken);
+                                return params;
+                            }
+                        };
+                        request(jsonTripObjectRequest);
+
+                        JSONObject tripResponse = null;
+                        int tripId = -1;
+                        try
+                        {
+                            tripResponse = tripFuture.get();
+                            tripId = tripResponse.getInt("id");
+                            Logger.getInstance().logInfo("Trip created with ID " + tripId);
+                        }
+                        catch (InterruptedException | ExecutionException | JSONException e)
+                        {
+                            e.printStackTrace();
+                            Logger.getInstance().logError("Trip not created");
+                            return null;
+                        }
+                        return tripId == -1 ? null : tripId;
+                    }, (tripId) ->
+                    {
+                        if (tripId == null)
+                        {
+                            onFinishedHandler.handle(null);
+                            return;
+                        }
+
+                        createBooking(result, tripId, (bookingId) ->
+                        {
+                            if (bookingId == null)
+                            {
+                                onFinishedHandler.handle(null);
+                                return;
+                            }
+                            onFinishedHandler.handle(tripId);
+                        });
+
+                    }, trip);
+                }
+                catch (JSONException e)
+                {
+                    e.printStackTrace();
+                    onFinishedHandler.handle(null);
+                    return;
+                }
+            });
+        });
+    }
+
+    @Override
+    public void endTrip(int carId, int tripId, int distanceTravelled, OnFinishedHandler<Integer> onFinishedHandler)
+    {
+
+        getRandomFreeChargingStation((chargingStation) ->
+        {
+
+            if (chargingStation != null)
+            {
+                ParametricThread<Integer, int[]> thread = new ParametricThread<>((param) ->
+                {
+
+                    String url = "https://api.ecruise.me/v1/trips/" + param[1];
+
+                    JSONObject patch = new JSONObject();
+                    try
+                    {
+                        patch.put("DistanceTravelled", param[2]);
+                        patch.put("EndChargingStationId", chargingStation.getInt("chargingStationId"));
+
+                        RequestFuture<JSONObject> future = RequestFuture.newFuture();
+                        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                                (Request.Method.PATCH, url, patch, future, future)
+                        {
+                            @Override
+                            public Map<String, String> getHeaders() throws AuthFailureError
+                            {
+                                Map<String, String> params = new HashMap<>();
+                                params.put("access_token", accessToken);
+                                return params;
+                            }
+                        };
+                        request(jsonObjectRequest);
+
+                        JSONObject result = null;
+                        int patchedTripId = -1;
+                        try
+                        {
+                            result = future.get(); // this will block
+                            patchedTripId = result.getInt("id");
+                            Logger.getInstance().logInfo("Patched trip " + patchedTripId + " to end");
+
+                            updatePosition(param[0], chargingStation.getDouble("latitude"),
+                                    chargingStation.getDouble("longitude"), (success) ->
+                                    {
+                                    });
+
+                            return patchedTripId;
+                        }
+                        catch (InterruptedException | JSONException | ExecutionException e)
+                        {
+                            e.printStackTrace();
+                            Logger.getInstance().logError("Trip not ended with ID " + param[0]);
+                            return null;
+                        }
+                    }
+                    catch (JSONException e)
+                    {
+                        e.printStackTrace();
+                        Logger.getInstance().logError("Trip not ended with ID " + param[0]);
+                        return null;
+                    }
+                }, onFinishedHandler, new int[]{carId, tripId, distanceTravelled});
+            }
+            else
+            {
+                onFinishedHandler.handle(null);
+            }
+        });
+    }
+
+    @Override
+    public void updatePosition(int carId, double latitude, double longitude, OnFinishedHandler<Boolean> onFinishedHandler)
+    {
+        ParametricThread<Boolean, Object[]> thread = new ParametricThread<>((param) ->
+        {
+            String url = "https://api.ecruise.me/v1/cars/" + Integer.toString((int) param[0]) + "/position/"
+                    + Double.toString((double) param[1]) + "/" + Double.toString((double) param[2]);
+
+            RequestFuture<JSONObject> future = RequestFuture.newFuture();
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                    (Request.Method.PATCH, url, null, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+            request(jsonObjectRequest);
+
+            try
+            {
+                JSONObject result = future.get();
+                Logger.getInstance().logInfo("Patched Position to " + Double.toString((double) param[1])
+                        + "N " + Double.toString((double) param[2]) + "E");
+            }
+            catch (InterruptedException | ExecutionException e)
+            {
+                e.printStackTrace();
+                Logger.getInstance().logError("Could not patch Position");
+                return false;
+            }
+
+            return true;
+        }, onFinishedHandler, new Object[]{carId, latitude, longitude});
+    }
+
+    @Override
+    public void updateChargeLevel(int carId, double chargeLevel, OnFinishedHandler<Boolean> onFinishedHandler)
+    {
+        ParametricThread<Boolean, Object[]> thread = new ParametricThread<>((param) ->
+        {
+            String url = "https://api.ecruise.me/v1/cars/" + Integer.toString((int) param[0]) + "/chargelevel";
+
+            String patchString = "\"" + Double.toString((double) param[1]) + "\"";
+
+            RequestFuture<JSONObject> future = RequestFuture.newFuture();
+            JsonStringRequest jsonObjectRequest = new JsonStringRequest
+                    (Request.Method.PATCH, url, patchString, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+            request(jsonObjectRequest);
+
+            try
+            {
+                JSONObject result = future.get();
+                Logger.getInstance().logInfo("Patched ChargeLevel to " + Double.toString((double) param[1]) + "%");
+            }
+            catch (InterruptedException | ExecutionException e)
+            {
+                e.printStackTrace();
+                Logger.getInstance().logError("Could not patch ChargeLevel");
+                return false;
+            }
+
+            return true;
+        }, onFinishedHandler, new Object[]{carId, chargeLevel});
+    }
+
+    @Override
+    public void hasPositionRequest(int carId, OnFinishedHandler<Boolean> onFinishedHandler)
+    {
+        ParametricThread<Boolean, Integer> thread = new ParametricThread<>((param) ->
+        {
+            String url = "https://api.ecruise.me/v1/cars/" + param + "/is-wanted";
+
+            RequestFuture<JSONObject> future = RequestFuture.newFuture();
+            StatusRequest statusRequest = new StatusRequest
+                    (Request.Method.GET, url, null, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+
+            request(statusRequest);
+
+            JSONObject positionRequest = null;
+            try
+            {
+                positionRequest = future.get();
+                String code = positionRequest.getString("code");
+
+                if (code.equals("200"))
+                {
+                    Logger.getInstance().logInfo("is-wanted: " + code);
+                    return true;
+                }
+
+                Logger.getInstance().logInfo("not is-wanted: " + code);
+                return false;
+            }
+            catch (InterruptedException | ExecutionException | JSONException e)
+            {
+                e.printStackTrace();
+            }
+            Logger.getInstance().logError("Can't ask for position request");
+            return false;
+        }, onFinishedHandler, carId);
+    }
+
+    private void authenticate(OnFinishedHandler<Boolean> onFinishedHandler)
+    {
+        ParametricThread<Boolean, Void> thread = new ParametricThread<>((x) ->
+        {
+            String url = "https://api.ecruise.me/v1/public/login/" + AUTH_EMAIL;
+            String stringRequest = "\"" + AUTH_PASSWORD + "\"";
+            RequestFuture<JSONObject> future = RequestFuture.newFuture();
+            JsonStringRequest jsonStringRequest = new JsonStringRequest(url, stringRequest, future, future);
+
+            request(jsonStringRequest);
+
+            try
+            {
+                JSONObject response = future.get(5, TimeUnit.SECONDS);
+                accessToken = response.getString("token");
+
+                Log.d("TOKEN", accessToken);
+            }
+            catch (ExecutionException | JSONException | InterruptedException | TimeoutException e1)
+            {
+                e1.printStackTrace();
+                Logger.getInstance().logError("Authentication failure");
+                return false;
+            }
+            Logger.getInstance().logInfo("Authenticated on https://api.ecruise.me");
+            return true;
+        }, onFinishedHandler, null);
+    }
+
+    private void getCustomerIdFromChipCardUid(String chipCardUid, OnFinishedHandler<Integer> onFinishedHandler)
+    {
+        ParametricThread<Integer, String> thread = new ParametricThread<>((param) ->
+        {
+            String url = "https://api.ecruise.me/v1/customers/";
+
+            RequestFuture<JSONArray> future = RequestFuture.newFuture();
+            JsonArrayRequest jsonArrayRequest = new JsonArrayRequest
+                    (Request.Method.GET, url, null, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+
+            request(jsonArrayRequest);
+
+            JSONArray customers = null;
+            try
+            {
+                customers = future.get();
+
+                for (int i = 0; i < customers.length(); i++)
+                {
+                    JSONObject customer = customers.getJSONObject(i);
+                    if (customer.getString("chipCardUid").equals(chipCardUid))
+                    {
+                        int customerId = customer.getInt("customerId");
+                        Logger.getInstance().logInfo("ChipCardUid " + chipCardUid
+                                + " <=> CustomerId " + customerId + " found");
+                        return customerId;
+                    }
+                }
+            }
+            catch (JSONException | InterruptedException | ExecutionException e)
+            {
+                e.printStackTrace();
+            }
+            Logger.getInstance().logInfo("ChipCardUid " + chipCardUid + " <=> no Customer found");
+            return null;
+        }, onFinishedHandler, chipCardUid);
+    }
+
+    private void getChipCardUidFromCustomerId(String customerId, OnFinishedHandler<String> onFinishedHandler)
+    {
+        ParametricThread<String, String> thread = new ParametricThread<>((param) ->
+        {
+            String url = "https://api.ecruise.me/v1/customers/" + param;
+
+            RequestFuture<JSONObject> future = RequestFuture.newFuture();
+            JsonObjectRequest jsonArrayRequest = new JsonObjectRequest
+                    (Request.Method.GET, url, null, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+            request(jsonArrayRequest);
+
+            JSONObject customer = null;
+            try
+            {
+                customer = future.get();
+                String chipCardUid = customer.getString("chipCardUid");
+
+                if (chipCardUid != null)
+                {
+                    Logger.getInstance().logInfo("CustomerId " + param + " <=> ChipCardUid " + chipCardUid + " found");
+                }
+                else
+                {
+                    Logger.getInstance().logInfo("CustomerId " + param + " <=> no ChipCardUid found");
+                }
+                return chipCardUid;
+            }
+            catch (JSONException | NullPointerException | InterruptedException | ExecutionException e)
+            {
+                e.printStackTrace();
+            }
+            Logger.getInstance().logError("CustomerId " + param + " <=> no ChipCardUid found");
+            return null;
+        }, onFinishedHandler, customerId);
+    }
+
+    private void getCarById(int carId, OnFinishedHandler<JSONObject> onFinishedHandler)
+    {
+        ParametricThread<JSONObject, Integer> thread = new ParametricThread<>((param) ->
+        {
+            String url = "https://api.ecruise.me/v1/cars/" + param;
+            RequestFuture<JSONObject> future = RequestFuture.newFuture();
+            JsonObjectRequest request = new JsonObjectRequest
+                    (Request.Method.GET, url, null, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+            request(request);
+
+            try
+            {
+                JSONObject car = future.get();
+                double chargeLevel = car.getDouble("chargeLevel");
+                Logger.getInstance().logInfo("Car" + param + " \uD83D\uDD0B"
+                        + new DecimalFormat("#.#").format(chargeLevel) + "%");
+                return car;
+            }
+            catch (InterruptedException | ExecutionException | JSONException e)
+            {
+                e.printStackTrace();
+            }
+            Logger.getInstance().logError("Car " + param + " not found");
+            return null;
+        }, onFinishedHandler, carId);
+    }
+
+    private void getTrips(int carId, OnFinishedHandler<JSONArray> onFinishedHandler)
+    {
+        ParametricThread<JSONArray, Integer> thread = new ParametricThread<>((param) ->
+        {
+            String url = "https://api.ecruise.me/v1/trips/by-car/" + param;
+
+            RequestFuture<JSONArray> future = RequestFuture.newFuture();
+            JsonArrayRequest request = new JsonArrayRequest
+                    (Request.Method.GET, url, null, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+            request(request);
+
+            try
+            {
+                JSONArray trips = future.get();
+                Logger.getInstance().logInfo("Trips for car " + param + " pulled");
+                return trips;
+            }
+            catch (InterruptedException | ExecutionException e)
+            {
+                e.printStackTrace();
+            }
+            Logger.getInstance().logError("Trips for car " + param + " not found");
+            return null;
+        }, onFinishedHandler, carId);
+    }
+
+    private void createBooking(int customerId, int tripId, OnFinishedHandler<Integer> onFinishedHandler)
+    {
+        JSONObject booking = new JSONObject();
         try
         {
-            patch.put("DistanceTravelled", distanceTravelled);
-            patch.put("EndChargingStationId", endCharingStationId);
+            booking.put("bookingId", null);
+            booking.put("customerId", customerId);
+            booking.put("tripId", tripId);
+            booking.put("invoiceItemId", null);
+            booking.put("bookingPositionLatitude", 49.488085);
+            booking.put("bookingPositionLongitude", 8.462774);
+            booking.put("bookingDate", new JsonDate(Calendar.getInstance()).getString());
+            booking.put("plannedDate", null);
+
+            ParametricThread<Integer, JSONObject> thread = new ParametricThread<>((param) ->
+            {
+                String url = "https://api.ecruise.me/v1/bookings";
+                RequestFuture<JSONObject> future = RequestFuture.newFuture();
+                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                        (Request.Method.POST, url, param, future, future)
+                {
+                    @Override
+                    public Map<String, String> getHeaders() throws AuthFailureError
+                    {
+                        Map<String, String> params = new HashMap<>();
+                        params.put("access_token", accessToken);
+                        return params;
+                    }
+                };
+                request(jsonObjectRequest);
+
+                JSONObject response = null;
+                int bookingId = -1;
+                try
+                {
+                    response = future.get();
+                    bookingId = response.getInt("id");
+                    Logger.getInstance().logInfo("Booking created with ID " + bookingId);
+                    return bookingId;
+                }
+                catch (InterruptedException | ExecutionException | JSONException e)
+                {
+                    e.printStackTrace();
+                    Logger.getInstance().logError("Booking not created");
+                    return null;
+                }
+            }, onFinishedHandler, booking);
         }
         catch (JSONException e)
         {
             e.printStackTrace();
-        }
-
-        RequestFuture<JSONObject> future = RequestFuture.newFuture();
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                (Request.Method.PATCH, url, null, future, future)
-        {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
-            {
-                Map<String, String> params = new HashMap<>();
-                params.put("access_token", accessToken);
-                return params;
-            }
-        };
-        addToRequestQueue(jsonObjectRequest);
-
-        try
-        {
-            JSONObject result = future.get(); // this will block
-
-            tripId = result.getInt("id");
-            Logger.getInstance().log("Trip ended with ID " + tripId);
-            tripId = -1;
-        }
-        catch (InterruptedException | JSONException | ExecutionException e)
-        {
-            e.printStackTrace();
+            onFinishedHandler.handle(null);
+            return;
         }
     }
 
-    private String getCustomerIdFromChipCardUid(String chipCardUid)
-            throws ExecutionException, InterruptedException, JSONException, InvalidParameterException
+    private void getCarChargingStation(int carId, OnFinishedHandler<JSONObject> onFinishedHandler)
     {
-        String url = "https://api.ecruise.me/v1/customers/";
-
-        RequestFuture<JSONArray> future = RequestFuture.newFuture();
-        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest
-                (Request.Method.GET, url, null, future, future)
+        ParametricThread<JSONObject, Integer> thread = new ParametricThread<>((param) ->
         {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
+            String url = "https://api.ecruise.me/v1/car-charging-stations/by-car/" + param;
+
+            RequestFuture<JSONArray> future = RequestFuture.newFuture();
+            JsonArrayRequest request = new JsonArrayRequest
+                    (Request.Method.GET, url, null, future, future)
             {
-                Map<String, String> params = new HashMap<>();
-                params.put("access_token", accessToken);
-                return params;
-            }
-        };
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+            request(request);
 
-        addToRequestQueue(jsonArrayRequest);
-
-
-        JSONArray customers = future.get(); // this will block
-
-        for (int i = 0; i < customers.length(); i++)
-        {
-            JSONObject customer = customers.getJSONObject(i);
-            if (customer.getString("chipCardUid").equals(chipCardUid))
+            try
             {
-                return customer.getString("customerId");
+                JSONArray trips = future.get();
+                Logger.getInstance().logInfo("Car-charging-stations for car " + param + " pulled");
+                return trips.getJSONObject(trips.length() - 1);
             }
-        }
-
-        throw new InvalidParameterException("No Customer with bookedChipCardUid " + chipCardUid + " found");
+            catch (InterruptedException | ExecutionException | JSONException e)
+            {
+                e.printStackTrace();
+            }
+            Logger.getInstance().logError("Car-charging-stations for car " + param + " not found");
+            return null;
+        }, onFinishedHandler, carId);
     }
 
-    private String getChipCardUidFromCustomerId(String customerId)
-            throws JSONException, ExecutionException, InterruptedException
+    private void getRandomFreeChargingStation(OnFinishedHandler<JSONObject> onFinishedHandler)
     {
-        String url = "https://api.ecruise.me/v1/customers/" + customerId;
-
-        RequestFuture<JSONObject> future = RequestFuture.newFuture();
-        JsonObjectRequest jsonArrayRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, future, future)
+        ParametricThread<JSONObject, Void> thread = new ParametricThread<>((empty) ->
         {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
+            String url = "https://api.ecruise.me/v1/charging-stations";
+
+            RequestFuture<JSONArray> future = RequestFuture.newFuture();
+            JsonArrayRequest request = new JsonArrayRequest
+                    (Request.Method.GET, url, null, future, future)
             {
-                Map<String, String> params = new HashMap<>();
-                params.put("access_token", accessToken);
-                return params;
-            }
-        };
-        addToRequestQueue(jsonArrayRequest);
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+            request(request);
 
-        JSONObject customer = future.get(); // this will block
-        return customer.getString("chipCardUid");
-    }
-
-    private void updateCarState()
-            throws ExecutionException, InterruptedException, JSONException
-    {
-        String url = "https://api.ecruise.me/v1/cars/" + CAR_ID;
-        RequestFuture<JSONObject> future = RequestFuture.newFuture();
-        JsonObjectRequest request = new JsonObjectRequest
-                (Request.Method.GET, url, null, future, future)
-        {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
+            try
             {
-                Map<String, String> params = new HashMap<>();
-                params.put("access_token", accessToken);
-                return params;
+                JSONArray chargingStations = future.get();
+                JSONArray freeStations = new JSONArray();
+
+                for (int i = 0; i < chargingStations.length(); i++)
+                {
+                    JSONObject candidate = chargingStations.getJSONObject(i);
+                    if (candidate.getInt("slotsOccupied") < candidate.getInt("slots"))
+                    {
+                        freeStations.put(candidate);
+                    }
+                }
+
+                if (freeStations.length() == 0)
+                {
+                    Logger.getInstance().logError("No free ChargingStations for ending trip. Keep driving");
+                }
+
+                JSONObject randomFreeStation = freeStations.getJSONObject(new Random().nextInt(freeStations.length()));
+
+                Logger.getInstance().logInfo("ChargingStation " + randomFreeStation.getInt("chargingStationId")
+                        + " randomly picked from " + freeStations.length() + " free Stations for ending trip");
+                return randomFreeStation;
             }
-        };
-        addToRequestQueue(request);
-
-        JSONObject car = future.get();
-
-        switch (car.getString("chargingState"))
-        {
-            case "DISCHARGING":
-                chargingState = ChargingState.DISCHARGING;
-                break;
-            case "CHARGING":
-                chargingState = ChargingState.CHARGING;
-                break;
-            case "FULL":
-                chargingState = ChargingState.FULL;
-                break;
-            default:
-                Log.e("ServerConnection", "Unknown ChargingState received from Server");
-                break;
-        }
-        Log.d("ServerConnection", "updateBookingstate to " + chargingState);
-
-        switch (car.getString("bookingState"))
-        {
-            case "AVAILABLE":
-                bookingState = BookingState.AVAILABLE;
-                break;
-            case "BOOKED":
-                bookingState = BookingState.BOOKED;
-                break;
-            case "BLOCKED":
-                bookingState = BookingState.BLOCKED;
-                break;
-            default:
-                Log.e("ServerConnection", "Unknown BookingState received from Server");
-                break;
-        }
-        Log.d("ServerConnection", "updateBookingState to " + bookingState);
-    }
-
-    private void updateBookedChipCardUid()
-            throws ExecutionException, InterruptedException, JSONException, ParseException
-    {
-        JSONArray trips = getTrips();
-
-        for (int i = 0; i < trips.length(); i++)
-        {
-            JSONObject trip = trips.getJSONObject(i);
-
-            JsonDate startDate = new JsonDate(trip.getString("startDate"));
-
-            // trip is in future ("30 min booking")
-            if (startDate.getCalendar().after(Calendar.getInstance()))
+            catch (InterruptedException | ExecutionException | JSONException e)
             {
-                String bookedCustomerId = trip.getString("customerId");
-                bookedChipCardUid = getChipCardUidFromCustomerId(bookedCustomerId);
-                break;
+                e.printStackTrace();
             }
-        }
+            Logger.getInstance().logError("No ChargingStations found");
+            return null;
+        }, onFinishedHandler, null);
     }
-
-    private JSONArray getTrips()
-            throws ExecutionException, InterruptedException
-    {
-        String url = "https://api.ecruise.me/v1//trips/by-car/" + CAR_ID;
-
-        RequestFuture<JSONArray> future = RequestFuture.newFuture();
-        JsonArrayRequest request = new JsonArrayRequest
-                (Request.Method.GET, url, null, future, future)
-        {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
-            {
-                Map<String, String> params = new HashMap<>();
-                params.put("access_token", accessToken);
-                return params;
-            }
-        };
-        addToRequestQueue(request);
-
-        return future.get();
-    }
-
 }
