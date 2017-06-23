@@ -1,17 +1,19 @@
 package ecruise.navi;
 
-import android.app.Application;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.BatteryManager;
 import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
-import com.android.volley.Request;
-import com.android.volley.toolbox.RequestFuture;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -32,7 +34,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -40,8 +41,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import ecruise.common.DataParser;
-import ecruise.common.JsonStringRequest;
-import ecruise.common.Server;
 import ecruise.common.ServerRequest;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback
@@ -229,13 +228,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapFragment.getMapAsync(this);
 
         Button centerButton = (Button) findViewById(R.id.centerButton);
+        final TextView textView = (TextView) findViewById(R.id.textView6);
+
         centerButton.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View view)
             {
-                try {
+                try
+                {
                     centerMarker();
+                    textView.setText(String.valueOf(getBatteryStatus()*100) + "%");
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -601,6 +604,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                Log.d("TIMER", "Timer done now!");
             }
         }.start();
+    }
+
+    private float getBatteryStatus()
+    {
+        IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        Intent batteryStatus = this.getApplicationContext().registerReceiver(null, ifilter);
+
+        int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+        float batteryPct = level / (float)scale;
+
+        return batteryPct;
     }
 
 
