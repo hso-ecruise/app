@@ -157,7 +157,7 @@ public class ServerConnection implements IServerConnection
                         String bookedCustomerId = trip.getString("customerId");
                         getChipCardUidFromCustomerId(bookedCustomerId, (chipCardUidOfBooked) ->
                         {
-                            if (chipCardUidOfBooked == null || !chipCardUid.equals(ADMIN_CHIPCARDUID))
+                            if (chipCardUidOfBooked == null && !chipCardUid.equals(ADMIN_CHIPCARDUID))
                             {
                                 onFinishedHandler.handle(null);
                                 return;
@@ -168,6 +168,10 @@ public class ServerConnection implements IServerConnection
                                 if (chipCardUid.equals(ADMIN_CHIPCARDUID))
                                 {
                                     Logger.getInstance().logInfo("Trip taken by Admin");
+                                }
+                                else
+                                {
+                                    Logger.getInstance().logInfo("ChipCardUid matched");
                                 }
 
                                 onFinishedHandler.handle(new Trip(tripId, startChargingStationId));
@@ -184,6 +188,7 @@ public class ServerConnection implements IServerConnection
                     }
                 }
                 // nothing found
+                Logger.getInstance().logError("No planned Trip found for this Car");
                 onFinishedHandler.handle(null);
                 return;
             }
@@ -762,6 +767,12 @@ public class ServerConnection implements IServerConnection
             try
             {
                 JSONArray trips = future.get();
+
+                if (trips.length() == 0)
+                {
+                    throw new InterruptedException();
+                }
+
                 Logger.getInstance().logInfo("Trips for car " + param + " pulled");
                 return trips;
             }
