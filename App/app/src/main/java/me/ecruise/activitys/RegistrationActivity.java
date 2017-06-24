@@ -88,6 +88,7 @@ public class RegistrationActivity extends AppCompatActivity {
         mRegistrationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d("CLICK", "confirm");
                 confirm();
             }
         });
@@ -97,7 +98,9 @@ public class RegistrationActivity extends AppCompatActivity {
      * Creates a new Customer with the User-Input and posts it to the server
      */
     public void confirm() {
+        Log.d("FUNKTION", "confirm");
         if (validateTextEdits()) {
+            Log.d("VALID", "TextEdits");
             Customer.getInstance(this.getApplicationContext()).setName(mNameText.getText().toString());
             Customer.getInstance(this.getApplicationContext()).setLastname(mLastnameText.getText().toString());
             Customer.getInstance(this.getApplicationContext()).setEmail(mEmailText.getText().toString());
@@ -109,6 +112,7 @@ public class RegistrationActivity extends AppCompatActivity {
             Customer.getInstance(this.getApplicationContext()).setStreet(mStreet.getText().toString());
             Customer.getInstance(this.getApplicationContext()).setHouseNumber(mHousenumber.getText().toString());
             Customer.getInstance(this.getApplicationContext()).setExtraAddressLine(mExtraAddressline.getText().toString());
+            Log.d("REGISTER", "User");
             Customer.getInstance(this.getApplicationContext()).registerUser(new Customer.DataCallback() {
                 @Override
                 public void onSuccess() {
@@ -124,6 +128,11 @@ public class RegistrationActivity extends AppCompatActivity {
             });
 
         }
+        else
+        {
+            Log.d("INVALID", "TextEdits");
+        }
+
     }
 
     /**
@@ -170,73 +179,88 @@ public class RegistrationActivity extends AppCompatActivity {
         if (mNameText.getText().toString().isEmpty()) {
             mNameText.setError("Pflichtfeld");
             mNameText.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (mLastnameText.getText().toString().isEmpty()) {
             mLastnameText.setError("Pflichtfeld");
             mLastnameText.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (mEmailText.getText().toString().isEmpty()) {
             mEmailText.setError("Pflichtfeld");
             mEmailText.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (!mEmailText.getText().toString().contains("@")) {
             mEmailText.setError("Keine gültige Email-Adresse");
             mEmailText.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (!mEmailText2.getText().toString().equals(mEmailText.getText().toString())) {
             mEmailText2.setError("Stimmt nicht überein");
             mEmailText2.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (mPasswordText.getText().toString().isEmpty()) {
             mPasswordText.setError("Pflichtfeld");
             mPasswordText.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
-        if (mPasswordText.getText().toString().length() < 4) {
-            mPasswordText.setError("Muss mindestens 4 Zeichen lang sein");
+        if (mPasswordText.getText().toString().length() < 8) {
+            mPasswordText.setError("Muss mindestens 8 Zeichen lang sein");
             mPasswordText.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (!mPasswordText2.getText().toString().equals(mPasswordText.getText().toString())) {
             mPasswordText2.setError("Stimmt nicht überein");
             mPasswordText2.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (mPhoneNumber.getText().toString().isEmpty()) {
             mPhoneNumber.setError("Pflichtfeld");
             mPhoneNumber.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (mCountry.getText().toString().isEmpty()) {
             mCountry.setError("Pflichtfeld");
             mCountry.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (mCity.getText().toString().isEmpty()) {
             mCity.setError("Pflichtfeld");
             mCity.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (mZipCode.getText().toString().isEmpty()) {
             mZipCode.setError("Pflichtfeld");
             mZipCode.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (mStreet.getText().toString().isEmpty()) {
             mStreet.setError("Pflichtfeld");
             mStreet.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
         if (mHousenumber.getText().toString().isEmpty()) {
             mHousenumber.setError("Pflichtfeld");
             mHousenumber.requestFocus();
+            Log.d("VALIDATE", "false");
             return false;
         }
+        Log.d("VALIDATE", "true");
         return true;
     }
 
