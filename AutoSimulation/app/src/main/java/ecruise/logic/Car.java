@@ -41,7 +41,6 @@ public class Car
         this.scanDevice = scanDevice;
     }
 
-
     public void endTrip(OnFinishedHandler<Boolean> onFinishedHandler)
     {
         int distanceTravelled = new Random().nextInt((50 - 2) + 1) + 2;
