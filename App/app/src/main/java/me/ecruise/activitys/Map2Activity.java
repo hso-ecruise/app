@@ -62,6 +62,16 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         mapFragment.getMapAsync(this);
 
+        Map.getInstance(this.getApplicationContext()).getCarsFromServer(new Customer.DataCallback() {
+            @Override
+            public void onSuccess() {
+            }
+
+            @Override
+            public void onFailure() {
+
+            }
+        });
     }
 
     /**
@@ -213,8 +223,9 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
         ArrayList<Car> cars = Map.getInstance(this.getApplicationContext()).getCars();
         for (Car car : cars) {
             Log.d("Show", "Car Nr" + Integer.toString(car.getId()));
-            createMarker(car.getName(), car.getPos(), "Car " + Integer.toString(car.getId()));
-            setMarkerImage("Car " + Integer.toString(car.getId()), "charging" + Integer.toString(car.getChargingLevel()));
+            String snippet = "Car " + Integer.toString(car.getId()) + "\n Lädt noch" + car.getChargingMinutes() + "min.";
+            createMarker(car.getName(), car.getPos(), snippet);
+            setMarkerImage(snippet, "charging" + Integer.toString(car.getChargingLevel()));
         }
     }
 
@@ -286,6 +297,10 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
                 currMarker = marker;
                 break;
             }
+        }
+        if(currMarker == null)
+        {
+            return;
         }
         switch (imageType) {
             case "freestation":

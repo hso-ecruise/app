@@ -173,7 +173,30 @@ public class Customer {
         zipCodeChanged = !(newCustomer.zipCode == 0) && !(this.zipCode == newCustomer.zipCode);
         cityChanged = !newCustomer.city.isEmpty() && !this.city.equals(newCustomer.city);
         countryChanged = !newCustomer.country.isEmpty() && !this.country.equals(newCustomer.country);
+        Log.d("nameChanged", String.valueOf(nameChanged));
+        Log.d("lastnameChanged", String.valueOf(lastnameChanged));
+        Log.d("emailChanged", String.valueOf(emailChanged));
+        Log.d("phoneNumberChanged", String.valueOf(phoneNumberChanged));
+        Log.d("passwordChanged", String.valueOf(passwordChanged));
+        Log.d("streetChanged", String.valueOf(streetChanged));
+        Log.d("houseNumberChanged", String.valueOf(houseNumberChanged));
+        Log.d("extraAddressLineChanged", String.valueOf(extraAddressLineChanged));
+        Log.d("zipCodeChanged", String.valueOf(zipCodeChanged));
+        Log.d("cityChanged", String.valueOf(cityChanged));
+        Log.d("countryChanged", String.valueOf(countryChanged));
 
+        Log.d("allinall", String.valueOf(nameChanged |
+                lastnameChanged |
+                emailChanged |
+                phoneNumberChanged |
+                passwordChanged |
+                streetChanged |
+                houseNumberChanged |
+                extraAddressLineChanged |
+                zipCodeChanged |
+                cityChanged |
+                countryChanged));
+        
         return (nameChanged |
                 lastnameChanged |
                 emailChanged |
@@ -249,6 +272,7 @@ public class Customer {
     public boolean updateUserData(Customer customer, DataAnswerCallback callback) {
         boolean updated = checkForChanges(customer);
         if (updated) {
+            Log.d("UPDATED", "YES");
             String url;
             JSONObject jsonObject = new JSONObject();
             String param;
@@ -310,6 +334,7 @@ public class Customer {
                 e.printStackTrace();
             }
         } else {
+            Log.d("UPDATED", "NO");
             callback.onFailure();
         }
         Log.d("RETURN", Boolean.toString(updated));
@@ -419,9 +444,9 @@ public class Customer {
      * @param callback
      */
     public void registerUser(DataCallback callback) {
+        Log.d("FUNCTION", "registerUser");
         final DataCallback mCallback = callback;
-        final String mToken = Customer.getInstance(mCtx).getToken();
-        String url = "https://api.ecruise.me/v1/public/register/";
+        String url = "https://api.ecruise.me/v1/public/register";
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("email", email);
@@ -439,7 +464,7 @@ public class Customer {
             e.printStackTrace();
         }
         JsonObjectRequest jsObjRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+                (Request.Method.POST, url, jsonObject, new Response.Listener<JSONObject>() {
 
                     @Override
                     public void onResponse(JSONObject response) {
@@ -455,6 +480,8 @@ public class Customer {
                     }
                 }) {
         };
+        Log.d("ADD", "REQUEST");
+        Log.d("Request", jsObjRequest.toString());
         Server.getInstance(mCtx).addToRequestQueue(jsObjRequest);
     }
 

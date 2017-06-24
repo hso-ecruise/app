@@ -43,6 +43,7 @@ import java.util.TimeZone;
 
 import me.ecruise.data.Booking;
 import me.ecruise.data.Customer;
+import me.ecruise.data.JsonDate;
 import me.ecruise.data.Server;
 
 public class BookingActivity extends AppCompatActivity implements
@@ -72,6 +73,8 @@ public class BookingActivity extends AppCompatActivity implements
             public void onClick(View view) {
                 if (validateSelectedDateAndTime())
                     startMap();
+                else
+                    dateTimeFailureAlert();
             }
         });
 
@@ -91,13 +94,13 @@ public class BookingActivity extends AppCompatActivity implements
 
                     }
                 } else {
-                    failureAlert();
+                    dateTimeFailureAlert();
                 }
 
             }
         });
         mPlannedDate = Calendar.getInstance();
-
+        mPlannedDate.setTimeZone(TimeZone.getTimeZone("UTC"));
         final EditText dateTextEdit = (EditText) findViewById(R.id.dateText);
         dateTextEdit.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -180,6 +183,9 @@ public class BookingActivity extends AppCompatActivity implements
      * Starts a new Map Activity where the location can be chosen
      */
     private void startMap() {
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowAllCars(false);
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowBookedCar(false);
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowStations(false);
         me.ecruise.data.Map.getInstance(this.getApplicationContext()).setGetLocation(true);
         Intent intent = new Intent(BookingActivity.this, Map2Activity.class);
         startActivityForResult(intent, 0);
@@ -237,6 +243,24 @@ public class BookingActivity extends AppCompatActivity implements
     }
 
     /**
+     * Creates a failure Alert
+     */
+    private void dateTimeFailureAlert() {
+        Log.d("Alert", "Failure");
+        AlertDialog.Builder dlgAlert = new AlertDialog.Builder(this);
+        dlgAlert.setMessage("Ungültiger Zeitpunkt!");
+        dlgAlert.setTitle("Hinweis");
+        dlgAlert.setPositiveButton("Ok",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        //dismiss the dialog
+                    }
+                });
+        dlgAlert.setCancelable(true);
+        dlgAlert.create().show();
+    }
+
+    /**
      * determines the position for the booking with the location of the smartphone
      */
     private void autoPosBooking() {
@@ -268,11 +292,10 @@ public class BookingActivity extends AppCompatActivity implements
         Log.d("Post", "booking");
         int id = Customer.getInstance(this.getApplicationContext()).getId();
 
-        TimeZone tz = TimeZone.getTimeZone("UTC");
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
-        df.setTimeZone(tz);
-        String plannedDateString = df.format(mPlannedDate.getTime());
-        Log.d("Planned Time", plannedDateString);
+        JsonDate plannedDate = new JsonDate(mPlannedDate);
+
+        String plannedDateString = plannedDate.getString();
+        Log.d("Planned Time", plannedDate.getString());
         String url = "https://api.ecruise.me/v1/bookings/";
         JSONObject reqObj = new JSONObject();
         try {

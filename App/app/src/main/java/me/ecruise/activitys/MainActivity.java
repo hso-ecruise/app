@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         Intent intent = new Intent(this, Map2Activity.class);
         me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowStations(true);
         me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowAllCars(true);
+        me.ecruise.data.Map.getInstance(this.getApplicationContext()).setShowBookedCar(false);
         startActivity(intent);
     }
 
@@ -138,8 +139,8 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
             case R.id.data:
                 startAccountManagement();
                 return true;
-            case R.id.notifications:
-                return true;
+//            case R.id.notifications:
+//                return true;
             case R.id.logout:
                 logout();
                 return true;
