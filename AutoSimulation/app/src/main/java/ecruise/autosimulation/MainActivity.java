@@ -186,6 +186,20 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    protected void onPause()
+    {
+        super.onPause();
+        nfcReader.onPause(this);
+    }
+
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        nfcReader.onResume(this);
+    }
+
+    @Override
     protected void onNewIntent(Intent intent)
     {
         if (nfcReader.isReady(intent))
