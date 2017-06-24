@@ -12,6 +12,7 @@ import java.util.Random;
 public class Car
 {
     private final int CAR_ID;
+    private static final String ADMIN_CHIPCARDUID = "04699762AE4F81";
     private StatusLED statusLED = new StatusLED();
     private ScanLED scanLED = new ScanLED();
     private IScanDevice scanDevice;
@@ -223,7 +224,7 @@ public class Car
 
         if (pausing)
         {
-            if (driverUid.equals(chipCardUid))
+            if (driverUid.equals(chipCardUid) || chipCardUid.equals(ADMIN_CHIPCARDUID))
             {
                 pausing = false;
                 limitTime = Calendar.getInstance();
@@ -239,7 +240,7 @@ public class Car
         }
         Server.getConnection().validId(chipCardUid, (validId) ->
         {
-            if (!validId)
+            if (!(validId || chipCardUid.equals(ADMIN_CHIPCARDUID)))
             {
                 onFinishedHandler.handle(ColorCode.RED);
                 return;

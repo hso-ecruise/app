@@ -31,6 +31,7 @@ public class ServerConnection implements IServerConnection
 {
     private static final String AUTH_EMAIL = "admin@ecruise.me";
     private static final String AUTH_PASSWORD = "ecruiseAdmin123!!!";
+    private static final String ADMIN_CHIPCARDUID = "04699762AE4F81";
     private String accessToken;
 
     private RequestQueue requestQueue;
@@ -156,14 +157,19 @@ public class ServerConnection implements IServerConnection
                         String bookedCustomerId = trip.getString("customerId");
                         getChipCardUidFromCustomerId(bookedCustomerId, (chipCardUidOfBooked) ->
                         {
-                            if (chipCardUidOfBooked == null)
+                            if (chipCardUidOfBooked == null || !chipCardUid.equals(ADMIN_CHIPCARDUID))
                             {
                                 onFinishedHandler.handle(null);
                                 return;
                             }
 
-                            if (chipCardUidOfBooked.equals(chipCardUid))
+                            if (chipCardUidOfBooked.equals(chipCardUid) || chipCardUid.equals(ADMIN_CHIPCARDUID))
                             {
+                                if (chipCardUid.equals(ADMIN_CHIPCARDUID))
+                                {
+                                    Logger.getInstance().logInfo("Trip taken by Admin");
+                                }
+
                                 onFinishedHandler.handle(new Trip(tripId, startChargingStationId));
                                 return;
                             }
@@ -245,10 +251,10 @@ public class ServerConnection implements IServerConnection
         ParametricThread<Boolean, Integer> thread = new ParametricThread<>((param) ->
         {
 
-            String url = "https://api.ecruise.me/v1/charging-stations/" + param + "/slots-occupied";
+            String url = "https://api.ecruise.me/v1/charging-stations/" + param + "/decrement-slots-occupied";
             RequestFuture<JSONObject> future = RequestFuture.newFuture();
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                    (Request.Method.PATCH, url, null, future, future)
+                    (Request.Method.GET, url, null, future, future)
             {
                 @Override
                 public Map<String, String> getHeaders() throws AuthFailureError
@@ -684,7 +690,7 @@ public class ServerConnection implements IServerConnection
                 }
                 else
                 {
-                    Logger.getInstance().logInfo("CustomerId " + param + " <=> no ChipCardUid found");
+                    Logger.getInstance().logWarning("CustomerId " + param + " <=> no ChipCardUid found");
                 }
                 return chipCardUid;
             }
@@ -692,7 +698,7 @@ public class ServerConnection implements IServerConnection
             {
                 e.printStackTrace();
             }
-            Logger.getInstance().logError("CustomerId " + param + " <=> no ChipCardUid found");
+            Logger.getInstance().logWarning("CustomerId " + param + " <=> no ChipCardUid found");
             return null;
         }, onFinishedHandler, customerId);
     }
