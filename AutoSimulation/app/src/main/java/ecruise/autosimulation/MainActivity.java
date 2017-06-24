@@ -94,6 +94,7 @@ public class MainActivity extends AppCompatActivity
                     try
                     {
                         nfcReader = new NFCReader(getApplicationContext());
+                        nfcReader.onResume(this);
                         car = new Car(carId, nfcReader);
 
                         statusTimer.scheduleAtFixedRate(new TimerTask()

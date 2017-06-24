@@ -15,13 +15,16 @@ public interface IServerConnection
     void getCarStateTuple(int carId, OnFinishedHandler<CarStateTuple> onFinishedHandler);
 
     // Handler returns tripId, or null if chipCardUid is invalid or error if not found
-    void hasBooked(int carId, String chipCardUid, OnFinishedHandler<Integer> onFinishedHandler);
+    void hasBooked(int carId, String chipCardUid, OnFinishedHandler<Trip> onFinishedHandler);
 
     // Handler returns success, false if error
     void updateChargingState(int carId, ChargingState chargingState, OnFinishedHandler<Boolean> onFinishedHandler);
 
     // Handler returns success, false if error
     void updateChargeLevel(int carId, double chargeLevel, OnFinishedHandler<Boolean> onFinishedHandler);
+
+    // Handler returns success, false if error
+    void decreaseSlotsOccupied(int startChargingStationId, OnFinishedHandler<Boolean> onFinishedHandler);
 
     // Handler returns success, or false if invalid or error (never null)
     void validId(String chipCardUid, OnFinishedHandler<Boolean> onFinishedHandler);

@@ -20,7 +20,7 @@ public class Car
     private boolean pausing = false;
     private Calendar limitTime; // The DateTime when the Car is sending its position. 24h after start of trip
     private int limitTimeValue = 24;
-    private  int limitTimeUnit = Calendar.HOUR;
+    private int limitTimeUnit = Calendar.HOUR;
 
     public boolean isDriving()
     {
@@ -262,12 +262,12 @@ public class Car
                 if (carState == CarState.BOOKED)
                 {
                     // existing trip
-                    Server.getConnection().hasBooked(CAR_ID, chipCardUid, (bookedTripId) ->
+                    Server.getConnection().hasBooked(CAR_ID, chipCardUid, (bookedTrip) ->
                     {
-                        ColorCode colorCode = scanLED.getColorCode(carState, bookedTripId != null);
-                        if (bookedTripId != null && colorCode == ColorCode.GREEN)
+                        ColorCode colorCode = scanLED.getColorCode(carState, bookedTrip != null);
+                        if (bookedTrip != null && colorCode == ColorCode.GREEN)
                         {
-                            tripId = bookedTripId;
+                            tripId = bookedTrip.getTripId();
                             driverUid = chipCardUid;
                             driving = true;
                             pausing = false;
@@ -275,18 +275,13 @@ public class Car
                             limitTime.add(limitTimeUnit, limitTimeValue);
                             Logger.getInstance().logInfo("Booking used to start trip");
 
-                            Server.getConnection().updateChargingState(CAR_ID, ChargingState.DISCHARGING, (success) ->
+                            Server.getConnection().updateChargingState(CAR_ID, ChargingState.DISCHARGING, (successChargingState) ->
                             {
-                                if (success)
+                                Server.getConnection().decreaseSlotsOccupied(bookedTrip.getStartChargingStationId(), (successDecrease) ->
                                 {
                                     onFinishedHandler.handle(colorCode);
                                     return;
-                                }
-                                else
-                                {
-                                    onFinishedHandler.handle(null);
-                                    return;
-                                }
+                                });
                             });
                         }
                         else
