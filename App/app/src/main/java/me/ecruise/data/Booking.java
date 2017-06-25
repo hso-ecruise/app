@@ -17,8 +17,11 @@ import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Created by Jens Ullrich on 30.05.2017.
@@ -108,12 +111,7 @@ public class Booking extends Button {
         try
         {
             JsonDate plannedDate = new JsonDate(plannedDateString);
-
-            DateFormat formatter = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.GERMAN);
-            Calendar calendar = plannedDate.getCalendar();
-            formatter.setCalendar(calendar);
-            formatter.setTimeZone(TimeZone.getDefault());
-            this.plannedDateString = formatter.format(calendar.getTime());
+            this.plannedDateString = plannedDate.getDisplayString();
         }
         catch (ParseException e)
         {

@@ -100,7 +100,7 @@ public class BookingActivity extends AppCompatActivity implements
             }
         });
         mPlannedDate = Calendar.getInstance();
-        mPlannedDate.setTimeZone(TimeZone.getTimeZone("UTC"));
+        //mPlannedDate.setTimeZone(TimeZone.getTimeZone("UTC"));
         final EditText dateTextEdit = (EditText) findViewById(R.id.dateText);
         dateTextEdit.setOnClickListener(new View.OnClickListener() {
             @Override

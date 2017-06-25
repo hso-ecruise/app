@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.TimeZone;
 
 public class JsonDate
@@ -22,27 +23,31 @@ public class JsonDate
     public JsonDate(String jsonDateString) throws ParseException
     {
         this.jsonDateString = jsonDateString;
-        calendar = GregorianCalendar.getInstance();
-        String s = jsonDateString.replace("Z", "+00:00");
-        try
-        {
-            s = s.substring(0, 22) + s.substring(23);
-        }
-        catch (IndexOutOfBoundsException e)
-        {
-            throw new ParseException("Invalid length", 0);
-        }
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        Date date = df.parse(s);
+        calendar = Calendar.getInstance();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        Date date = df.parse(jsonDateString);
         calendar.setTime(date);
     }
 
     public JsonDate(Calendar calendar)
     {
+        this.calendar = calendar;
         Date date = calendar.getTime();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         String formatted = df.format(date);
         jsonDateString = formatted.substring(0, 22) + ":" + formatted.substring(22);
+    }
+
+    public String getDisplayString()
+    {
+        Log.d("DATE_TIME_STRING", this.getString());
+        Calendar dateTime = this.getCalendar();
+
+        dateTime.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"));
+        Date date = dateTime.getTime();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String displayString = df.format(date);
+        return displayString;
     }
 
     public Calendar getCalendar()
