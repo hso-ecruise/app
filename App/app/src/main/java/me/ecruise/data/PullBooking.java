@@ -121,7 +121,6 @@ public class PullBooking extends Service
                                     Log.d("plannedDate:", date.getCalendar().toString());
 
                                     Calendar now = Calendar.getInstance();
-                                    now.add(Calendar.HOUR, -2);
 
                                     // only if trip is in future
                                     if (date.getCalendar().after(now))

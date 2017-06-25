@@ -25,6 +25,7 @@ public class JsonDate
         this.jsonDateString = jsonDateString;
         calendar = Calendar.getInstance();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
         Date date = df.parse(jsonDateString);
         calendar.setTime(date);
     }
