@@ -15,6 +15,7 @@ import com.google.android.gms.maps.model.LatLng;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
@@ -100,14 +101,22 @@ public class Booking extends Button {
      * @param plannedDateString
      * @param bookedPos
      */
-    public Booking(Context context, int ID, String plannedDateString, LatLng bookedPos) {
+    public Booking(Context context, int ID, String plannedDateString, LatLng bookedPos)
+    {
         super(context);
         this.ID = ID;
-        this.plannedDateString = plannedDateString;
-        try {
+        try
+        {
             JsonDate plannedDate = new JsonDate(plannedDateString);
-            this.plannedDateString = plannedDate.getCalendar().toString();
-        } catch (ParseException e) {
+
+            DateFormat formatter = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.GERMAN);
+            Calendar calendar = plannedDate.getCalendar();
+            formatter.setCalendar(calendar);
+            formatter.setTimeZone(TimeZone.getDefault());
+            this.plannedDateString = formatter.format(calendar.getTime());
+        }
+        catch (ParseException e)
+        {
             e.printStackTrace();
         }
 
