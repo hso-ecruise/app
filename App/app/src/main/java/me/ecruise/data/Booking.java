@@ -106,7 +106,7 @@ public class Booking extends Button {
         this.plannedDateString = plannedDateString;
         try {
             JsonDate plannedDate = new JsonDate(plannedDateString);
-            this.plannedDateString = plannedDate.getString();
+            this.plannedDateString = plannedDate.getCalendar().toString();
         } catch (ParseException e) {
             e.printStackTrace();
         }
