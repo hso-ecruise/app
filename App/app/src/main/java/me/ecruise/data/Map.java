@@ -208,6 +208,8 @@ public class Map {
      * @param callback
      */
     public void saveCars(JSONArray array, Customer.DataCallback callback) {
+        allCars.clear();
+        cars.clear();
         final Customer.DataCallback mCallback = callback;
         for (int i = 0; i < array.length(); i++) {
             Car car;

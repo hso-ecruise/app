@@ -5,11 +5,14 @@ package me.ecruise.data;
  * @since 30.05.2017.
  */
 
+import android.util.Log;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 public class JsonDate
 {
@@ -29,14 +32,22 @@ public class JsonDate
         {
             throw new ParseException("Invalid length", 0);
         }
-        Date date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(s);
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        Log.d("TimeZone" , tz.getDisplayName());
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        df.setTimeZone(tz);
+        Date date = df.parse(s);
         calendar.setTime(date);
     }
 
     public JsonDate(Calendar calendar)
     {
         Date date = calendar.getTime();
-        String formatted = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(date);
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        Log.d("TimeZone" , tz.getDisplayName());
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        df.setTimeZone(tz);
+        String formatted = df.format(date);
         jsonDateString = formatted.substring(0, 22) + ":" + formatted.substring(22);
     }
 

@@ -16,7 +16,7 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme">
         <activity android:name=".MainActivity"
-                  android:launchMode="singleInstance"
+                  android:launchMode="singleTask"
                   android:configChanges="orientation"
                   android:screenOrientation="portrait">
             <intent-filter>
@@ -25,7 +25,7 @@
             </intent-filter>
 
             <intent-filter>
-                <action android:name="android.nfc.action.TAG_DISCOVERED"/>
+                <action android:name="android.nfc.action.TECH_DISCOVERED"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>

@@ -12,6 +12,7 @@ import java.util.Random;
 public class Car
 {
     private final int CAR_ID;
+    private static final String ADMIN_CHIPCARDUID = "04699762AE4F81";
     private StatusLED statusLED = new StatusLED();
     private ScanLED scanLED = new ScanLED();
     private IScanDevice scanDevice;
@@ -20,7 +21,7 @@ public class Car
     private boolean pausing = false;
     private Calendar limitTime; // The DateTime when the Car is sending its position. 24h after start of trip
     private int limitTimeValue = 24;
-    private  int limitTimeUnit = Calendar.HOUR;
+    private int limitTimeUnit = Calendar.HOUR;
 
     public boolean isDriving()
     {
@@ -40,7 +41,6 @@ public class Car
         this.CAR_ID = carId;
         this.scanDevice = scanDevice;
     }
-
 
     public void endTrip(OnFinishedHandler<Boolean> onFinishedHandler)
     {
@@ -224,7 +224,7 @@ public class Car
 
         if (pausing)
         {
-            if (driverUid.equals(chipCardUid))
+            if (driverUid.equals(chipCardUid) || chipCardUid.equals(ADMIN_CHIPCARDUID))
             {
                 pausing = false;
                 limitTime = Calendar.getInstance();
@@ -240,7 +240,7 @@ public class Car
         }
         Server.getConnection().validId(chipCardUid, (validId) ->
         {
-            if (!validId)
+            if (!(validId || chipCardUid.equals(ADMIN_CHIPCARDUID)))
             {
                 onFinishedHandler.handle(ColorCode.RED);
                 return;
@@ -263,12 +263,12 @@ public class Car
                 if (carState == CarState.BOOKED)
                 {
                     // existing trip
-                    Server.getConnection().hasBooked(CAR_ID, chipCardUid, (bookedTripId) ->
+                    Server.getConnection().hasBooked(CAR_ID, chipCardUid, (bookedTrip) ->
                     {
-                        ColorCode colorCode = scanLED.getColorCode(carState, bookedTripId != null);
-                        if (bookedTripId != null && colorCode == ColorCode.GREEN)
+                        ColorCode colorCode = scanLED.getColorCode(carState, bookedTrip != null);
+                        if (bookedTrip != null && colorCode == ColorCode.GREEN)
                         {
-                            tripId = bookedTripId;
+                            tripId = bookedTrip.getTripId();
                             driverUid = chipCardUid;
                             driving = true;
                             pausing = false;
@@ -276,18 +276,13 @@ public class Car
                             limitTime.add(limitTimeUnit, limitTimeValue);
                             Logger.getInstance().logInfo("Booking used to start trip");
 
-                            Server.getConnection().updateChargingState(CAR_ID, ChargingState.DISCHARGING, (success) ->
+                            Server.getConnection().updateChargingState(CAR_ID, ChargingState.DISCHARGING, (successChargingState) ->
                             {
-                                if (success)
+                                Server.getConnection().decreaseSlotsOccupied(bookedTrip.getStartChargingStationId(), (successDecrease) ->
                                 {
                                     onFinishedHandler.handle(colorCode);
                                     return;
-                                }
-                                else
-                                {
-                                    onFinishedHandler.handle(null);
-                                    return;
-                                }
+                                });
                             });
                         }
                         else

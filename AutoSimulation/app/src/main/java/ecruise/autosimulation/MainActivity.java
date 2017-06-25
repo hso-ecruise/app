@@ -94,6 +94,7 @@ public class MainActivity extends AppCompatActivity
                     try
                     {
                         nfcReader = new NFCReader(getApplicationContext());
+                        nfcReader.onResume(this);
                         car = new Car(carId, nfcReader);
 
                         statusTimer.scheduleAtFixedRate(new TimerTask()
@@ -183,6 +184,20 @@ public class MainActivity extends AppCompatActivity
                 });
 
         alertDialog.show();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+        nfcReader.onPause(this);
+    }
+
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        nfcReader.onResume(this);
     }
 
     @Override

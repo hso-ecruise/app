@@ -16,6 +16,16 @@ public class Car {
     private String name;
     private String plate;
 
+    public int getChargingMinutes() {
+        return chargingMinutes;
+    }
+
+    public void setChargingMinutes(int chargingMinutes) {
+        this.chargingMinutes = chargingMinutes;
+    }
+
+    private int chargingMinutes;
+
     public Car(int id, LatLng pos, boolean full, boolean available, int chargingLevel, String name) {
         this.setId(id);
         this.setPos(pos);
@@ -70,6 +80,7 @@ public class Car {
      * @param chargingLevel
      */
     public void setChargingLevel(int chargingLevel) {
+        chargingMinutes = 100-chargingLevel;
         if(chargingLevel < 25)
             this.chargingLevel = 0;
         else if(chargingLevel < 50)

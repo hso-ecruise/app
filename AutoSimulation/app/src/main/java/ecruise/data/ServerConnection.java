@@ -31,6 +31,7 @@ public class ServerConnection implements IServerConnection
 {
     private static final String AUTH_EMAIL = "admin@ecruise.me";
     private static final String AUTH_PASSWORD = "ecruiseAdmin123!!!";
+    private static final String ADMIN_CHIPCARDUID = "04699762AE4F81";
     private String accessToken;
 
     private RequestQueue requestQueue;
@@ -39,12 +40,12 @@ public class ServerConnection implements IServerConnection
     {
         if (req.getBody() != null)
         {
-            Logger.getInstance().log("\u25B2" + req.getUrl().substring(22)
-                    + " \uD83D\uDCE6" + new String(req.getBody(), StandardCharsets.UTF_8));
+            Logger.getInstance().log("\uD83C\uDF10" + req.getUrl().substring(22)
+                    + " \uD83D\uDCE6" + new String(req.getBody(), StandardCharsets.UTF_8).replace("\"ecruiseAdmin123!!!\"", "<<PASSWORD REDACTED>>"));
         }
         else
         {
-            Logger.getInstance().log("\u25B2" + req.getUrl().substring(22) + " \uD83D\uDCE6\u2205");
+            Logger.getInstance().log("\uD83C\uDF10" + req.getUrl().substring(22) + " \uD83D\uDCE6\u2205");
         }
         requestQueue.add(req);
     }
@@ -130,7 +131,7 @@ public class ServerConnection implements IServerConnection
     }
 
     @Override
-    public void hasBooked(int carId, String chipCardUid, OnFinishedHandler<Integer> onFinishedHandler)
+    public void hasBooked(int carId, String chipCardUid, OnFinishedHandler<Trip> onFinishedHandler)
     {
         getTrips(carId, (trips) ->
         {
@@ -146,6 +147,7 @@ public class ServerConnection implements IServerConnection
                 {
                     JSONObject trip = trips.getJSONObject(i);
                     int tripId = trip.getInt("tripId");
+                    int startChargingStationId = trip.getInt("startChargingStationId");
 
                     String endDate = trip.getString("endDate");
 
@@ -155,15 +157,24 @@ public class ServerConnection implements IServerConnection
                         String bookedCustomerId = trip.getString("customerId");
                         getChipCardUidFromCustomerId(bookedCustomerId, (chipCardUidOfBooked) ->
                         {
-                            if (chipCardUidOfBooked == null)
+                            if (chipCardUidOfBooked == null && !chipCardUid.equals(ADMIN_CHIPCARDUID))
                             {
                                 onFinishedHandler.handle(null);
                                 return;
                             }
 
-                            if (chipCardUidOfBooked.equals(chipCardUid))
+                            if (chipCardUidOfBooked.equals(chipCardUid) || chipCardUid.equals(ADMIN_CHIPCARDUID))
                             {
-                                onFinishedHandler.handle(tripId);
+                                if (chipCardUid.equals(ADMIN_CHIPCARDUID))
+                                {
+                                    Logger.getInstance().logInfo("Trip taken by Admin");
+                                }
+                                else
+                                {
+                                    Logger.getInstance().logInfo("ChipCardUid matched");
+                                }
+
+                                onFinishedHandler.handle(new Trip(tripId, startChargingStationId));
                                 return;
                             }
                             else
@@ -177,6 +188,7 @@ public class ServerConnection implements IServerConnection
                     }
                 }
                 // nothing found
+                Logger.getInstance().logError("No planned Trip found for this Car");
                 onFinishedHandler.handle(null);
                 return;
             }
@@ -238,6 +250,43 @@ public class ServerConnection implements IServerConnection
         }
     }
 
+    @Override
+    public void decreaseSlotsOccupied(int startChargingStationId, OnFinishedHandler<Boolean> onFinishedHandler)
+    {
+        ParametricThread<Boolean, Integer> thread = new ParametricThread<>((param) ->
+        {
+
+            String url = "https://api.ecruise.me/v1/charging-stations/" + param + "/decrement-slots-occupied";
+            RequestFuture<JSONObject> future = RequestFuture.newFuture();
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                    (Request.Method.GET, url, null, future, future)
+            {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("access_token", accessToken);
+                    return params;
+                }
+            };
+
+            request(jsonObjectRequest);
+
+            JSONObject result = null;
+            try
+            {
+                result = future.get(); // this will block
+                return true;
+            }
+            catch (InterruptedException | ExecutionException e)
+            {
+                e.printStackTrace();
+                Logger.getInstance().logError("1 Car was taken from 0 Cars the ChargingStation" + param + ". Database is inconsistent");
+                return false;
+            }
+
+        }, onFinishedHandler, startChargingStationId);
+    }
 
     @Override
     public void validId(String chipCardUid, OnFinishedHandler<Boolean> onFinishedHandler)
@@ -331,22 +380,8 @@ public class ServerConnection implements IServerConnection
                         return tripId == -1 ? null : tripId;
                     }, (tripId) ->
                     {
-                        if (tripId == null)
-                        {
-                            onFinishedHandler.handle(null);
-                            return;
-                        }
-
-                        createBooking(result, tripId, (bookingId) ->
-                        {
-                            if (bookingId == null)
-                            {
-                                onFinishedHandler.handle(null);
-                                return;
-                            }
-                            onFinishedHandler.handle(tripId);
-                        });
-
+                        onFinishedHandler.handle(tripId);
+                        return;
                     }, trip);
                 }
                 catch (JSONException e)
@@ -362,10 +397,8 @@ public class ServerConnection implements IServerConnection
     @Override
     public void endTrip(int carId, int tripId, int distanceTravelled, OnFinishedHandler<Integer> onFinishedHandler)
     {
-
         getRandomFreeChargingStation((chargingStation) ->
         {
-
             if (chargingStation != null)
             {
                 ParametricThread<Integer, int[]> thread = new ParametricThread<>((param) ->
@@ -656,13 +689,13 @@ public class ServerConnection implements IServerConnection
                 customer = future.get();
                 String chipCardUid = customer.getString("chipCardUid");
 
-                if (chipCardUid != null)
+                if (chipCardUid != null && !chipCardUid.equals("null"))
                 {
                     Logger.getInstance().logInfo("CustomerId " + param + " <=> ChipCardUid " + chipCardUid + " found");
                 }
                 else
                 {
-                    Logger.getInstance().logInfo("CustomerId " + param + " <=> no ChipCardUid found");
+                    Logger.getInstance().logWarning("CustomerId " + param + " <=> no ChipCardUid found");
                 }
                 return chipCardUid;
             }
@@ -670,7 +703,7 @@ public class ServerConnection implements IServerConnection
             {
                 e.printStackTrace();
             }
-            Logger.getInstance().logError("CustomerId " + param + " <=> no ChipCardUid found");
+            Logger.getInstance().logWarning("CustomerId " + param + " <=> no ChipCardUid found");
             return null;
         }, onFinishedHandler, customerId);
     }
@@ -734,6 +767,12 @@ public class ServerConnection implements IServerConnection
             try
             {
                 JSONArray trips = future.get();
+
+                if (trips.length() == 0)
+                {
+                    throw new InterruptedException();
+                }
+
                 Logger.getInstance().logInfo("Trips for car " + param + " pulled");
                 return trips;
             }
@@ -744,62 +783,6 @@ public class ServerConnection implements IServerConnection
             Logger.getInstance().logError("Trips for car " + param + " not found");
             return null;
         }, onFinishedHandler, carId);
-    }
-
-    private void createBooking(int customerId, int tripId, OnFinishedHandler<Integer> onFinishedHandler)
-    {
-        JSONObject booking = new JSONObject();
-        try
-        {
-            booking.put("bookingId", null);
-            booking.put("customerId", customerId);
-            booking.put("tripId", tripId);
-            booking.put("invoiceItemId", null);
-            booking.put("bookingPositionLatitude", 49.488085);
-            booking.put("bookingPositionLongitude", 8.462774);
-            booking.put("bookingDate", new JsonDate(Calendar.getInstance()).getString());
-            booking.put("plannedDate", null);
-
-            ParametricThread<Integer, JSONObject> thread = new ParametricThread<>((param) ->
-            {
-                String url = "https://api.ecruise.me/v1/bookings";
-                RequestFuture<JSONObject> future = RequestFuture.newFuture();
-                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                        (Request.Method.POST, url, param, future, future)
-                {
-                    @Override
-                    public Map<String, String> getHeaders() throws AuthFailureError
-                    {
-                        Map<String, String> params = new HashMap<>();
-                        params.put("access_token", accessToken);
-                        return params;
-                    }
-                };
-                request(jsonObjectRequest);
-
-                JSONObject response = null;
-                int bookingId = -1;
-                try
-                {
-                    response = future.get();
-                    bookingId = response.getInt("id");
-                    Logger.getInstance().logInfo("Booking created with ID " + bookingId);
-                    return bookingId;
-                }
-                catch (InterruptedException | ExecutionException | JSONException e)
-                {
-                    e.printStackTrace();
-                    Logger.getInstance().logError("Booking not created");
-                    return null;
-                }
-            }, onFinishedHandler, booking);
-        }
-        catch (JSONException e)
-        {
-            e.printStackTrace();
-            onFinishedHandler.handle(null);
-            return;
-        }
     }
 
     private void getCarChargingStation(int carId, OnFinishedHandler<JSONObject> onFinishedHandler)

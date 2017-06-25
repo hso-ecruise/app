@@ -37,11 +37,15 @@ public class NFCReader implements IScanDevice
         if (intent == null)
             throw new IllegalStateException("Check isReady() before calling this method");
 
+        Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+        return readTag(tag);
+    }
+
+    private String readTag(Tag tag)
+    {
         String chipCardUid = "";
         try
         {
-            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-
             byte[] tagId = tag.getId();
 
             StringBuilder sb = new StringBuilder();
@@ -63,16 +67,13 @@ public class NFCReader implements IScanDevice
 
     public boolean onResume(Activity activity)
     {
-        NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(activity);
         PendingIntent pendingIntent = PendingIntent.getActivity(activity, 0, new Intent(activity, activity.getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
-
         nfcAdapter.enableForegroundDispatch(activity, pendingIntent, null, null);
         return false;
     }
 
     public boolean onPause(Activity activity)
     {
-        NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(activity);
         nfcAdapter.disableForegroundDispatch(activity);
         return false;
     }
@@ -81,9 +82,9 @@ public class NFCReader implements IScanDevice
     // and it will store the intent, which is needed for scanning
     public boolean isReady(Intent intent)
     {
-        if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction()) ||
-                NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction()) ||
-                NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction()))
+        if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction())
+                || NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction())
+                || NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction()))
         {
             this.intent = intent;
             return true;

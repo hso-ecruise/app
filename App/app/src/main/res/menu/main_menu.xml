@@ -5,9 +5,9 @@
     <item android:id="@+id/data"
         android:title="Meine Daten"/>
 
-    <item
-        android:id="@+id/notifications"
-        android:title="Benachrichtigungen" />
+    <!--<item-->
+        <!--android:id="@+id/notifications"-->
+        <!--android:title="Benachrichtigungen" />-->
 
     <item
         android:id="@+id/logout"
