@@ -19,6 +19,7 @@ public class JsonDate
 {
     private String jsonDateString;
     private Calendar calendar;
+    TimeZone timeZone = TimeZone.getTimeZone("Europe/Berlin");
 
     public JsonDate(String jsonDateString) throws ParseException
     {
@@ -42,13 +43,8 @@ public class JsonDate
     public String getDisplayString()
     {
         Log.d("DATE_TIME_STRING", this.getString());
-        Calendar dateTime = this.getCalendar();
-
-        dateTime.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"));
-        Date date = dateTime.getTime();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        String displayString = df.format(date);
-        return displayString;
+        SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss", Locale.GERMANY);
+        return format.format(calendar.getTime());
     }
 
     public Calendar getCalendar()
