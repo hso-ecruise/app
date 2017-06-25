@@ -111,7 +111,7 @@ public class Booking extends Button {
             e.printStackTrace();
         }
 
-        this.setText("Buchung Nr." + ID + "\n" + plannedDateString);
+        this.setText("Buchung Nr." + ID + "\n" + this.plannedDateString);
         this.setBookedPos(bookedPos);
     }
 }
