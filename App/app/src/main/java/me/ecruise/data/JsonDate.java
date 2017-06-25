@@ -32,10 +32,7 @@ public class JsonDate
         {
             throw new ParseException("Invalid length", 0);
         }
-        TimeZone tz = TimeZone.getTimeZone("UTC");
-        Log.d("TimeZone" , tz.getDisplayName());
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        df.setTimeZone(tz);
         Date date = df.parse(s);
         calendar.setTime(date);
     }
@@ -43,10 +40,7 @@ public class JsonDate
     public JsonDate(Calendar calendar)
     {
         Date date = calendar.getTime();
-        TimeZone tz = TimeZone.getTimeZone("UTC");
-        Log.d("TimeZone" , tz.getDisplayName());
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        df.setTimeZone(tz);
         String formatted = df.format(date);
         jsonDateString = formatted.substring(0, 22) + ":" + formatted.substring(22);
     }

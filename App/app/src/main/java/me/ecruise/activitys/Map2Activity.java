@@ -345,7 +345,7 @@ public class Map2Activity extends AppCompatActivity implements OnMapReadyCallbac
                 break;
             case "charging100":
                 assert currMarker != null;
-                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.charging_100));
+                currMarker.setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.free_car));
                 break;
 
         }
